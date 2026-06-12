@@ -1,18 +1,38 @@
 
+'use client';
+
+import { use, useState, useEffect } from 'react';
 import { login, signup } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Trophy, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
 
-export default async function LoginPage(props: {
+export default function LoginPage(props: {
   searchParams: Promise<{ message?: string; error?: string }>;
 }) {
-  const resolvedParams = await props.searchParams;
+  const resolvedParams = use(props.searchParams);
   const loginError = resolvedParams.error;
   const loginMessage = resolvedParams.message;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Evita Hydration Mismatch renderizando um estado estável até que o cliente esteja montado
+  if (!mounted) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Aguardando arena...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
