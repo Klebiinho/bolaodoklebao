@@ -192,13 +192,6 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
 
   const isInteractionDisabled = status !== 'UPCOMING' || isSaving;
 
-  const getOptimizedBadge = (url: string) => {
-    if (url.includes('thesportsdb.com') && !url.includes('/preview')) {
-      return `${url}/preview`;
-    }
-    return url;
-  };
-
   return (
     <Card className={cn(
       "bg-card border-border/50 p-5 transition-all duration-300 relative overflow-hidden group",
@@ -229,7 +222,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           <div className="flex flex-col items-center flex-1">
             <div className="w-14 h-14 mb-3 flex items-center justify-center">
               <img 
-                src={getOptimizedBadge(badgeA)} 
+                src={badgeA} 
                 alt={getTranslatedName(teamA)} 
                 className="max-w-full max-h-full object-contain drop-shadow-md"
               />
@@ -290,7 +283,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           <div className="flex flex-col items-center flex-1">
             <div className="w-14 h-14 mb-3 flex items-center justify-center">
               <img 
-                src={getOptimizedBadge(badgeB)} 
+                src={badgeB} 
                 alt={getTranslatedName(teamB)} 
                 className="max-w-full max-h-full object-contain drop-shadow-md"
               />

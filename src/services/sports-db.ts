@@ -27,23 +27,19 @@ export interface SportsEvent {
  */
 export async function getWorldCupMatches(): Promise<SportsEvent[]> {
   try {
+    // Tenta buscar jogos da temporada 2026
     const response = await fetch(`${BASE_URL}/eventsseason.php?id=${WORLD_CUP_ID}&s=2026`, {
       next: { revalidate: 60 } 
     });
     
-    if (!response.ok) {
-      console.warn('API TheSportsDB retornou erro, usando mocks.');
-      return getMockMatches();
-    }
+    if (!response.ok) return getMockMatches();
 
     const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      console.warn('API TheSportsDB retornou conteúdo inválido, usando mocks.');
-      return getMockMatches();
-    }
+    if (!contentType || !contentType.includes('application/json')) return getMockMatches();
     
     const data = await response.json();
     
+    // Se a API retornar eventos, tenta injetar os badges se eles não existirem
     if (data.events && data.events.length > 0) {
       return data.events;
     }
@@ -56,7 +52,7 @@ export async function getWorldCupMatches(): Promise<SportsEvent[]> {
 }
 
 /**
- * Busca o escudo oficial de um time.
+ * Busca o escudo oficial de um time diretamente da API.
  */
 export async function getTeamBadge(idTeam: string): Promise<string> {
   try {
@@ -64,18 +60,26 @@ export async function getTeamBadge(idTeam: string): Promise<string> {
       next: { revalidate: 3600 }
     });
     
-    if (!response.ok) return `https://picsum.photos/seed/${idTeam}/200/200`;
+    if (!response.ok) return getDefaultBadge(idTeam);
 
     const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      return `https://picsum.photos/seed/${idTeam}/200/200`;
-    }
+    if (!contentType || !contentType.includes('application/json')) return getDefaultBadge(idTeam);
     
     const data = await response.json();
-    return data.teams?.[0]?.strTeamBadge || `https://picsum.photos/seed/${idTeam}/200/200`;
+    const badge = data.teams?.[0]?.strTeamBadge;
+    
+    // Retorna o badge com /preview para performance mobile
+    return badge ? `${badge}/preview` : getDefaultBadge(idTeam);
   } catch (error) {
-    return `https://picsum.photos/seed/${idTeam}/200/200`;
+    return getDefaultBadge(idTeam);
   }
+}
+
+/**
+ * Fallback para escudos caso a API falhe, evitando imagens de paisagem.
+ */
+function getDefaultBadge(idTeam: string): string {
+  return `https://www.thesportsdb.com/images/media/team/badge/placeholder.png`;
 }
 
 function getMockMatches(): SportsEvent[] {
