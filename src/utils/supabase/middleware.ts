@@ -28,12 +28,26 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // IMPORTANTE: Não execute código entre createServerClient e supabase.auth.getUser().
+  // IMPORTANTE: supabase.auth.getUser() é o método seguro para verificar a sessão no middleware
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Se precisar de proteção de rotas, adicione a lógica aqui futuramente.
+  const isLoginPage = request.nextUrl.pathname.startsWith('/login')
+
+  // Se o usuário não estiver logado e tentar acessar qualquer página que não seja o login, redireciona
+  if (!user && !isLoginPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // Se o usuário já estiver logado e tentar acessar a página de login, redireciona para a home
+  if (user && isLoginPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
