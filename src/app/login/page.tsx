@@ -8,11 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 export default async function LoginPage(props: {
-  searchParams: Promise<{ message: string; error: string }>;
+  searchParams: Promise<{ message?: string; error?: string }>;
 }) {
-  const searchParams = await props.searchParams;
-  const error = searchParams?.error;
-  const message = searchParams?.message;
+  const resolvedParams = await props.searchParams;
+  const loginError = resolvedParams.error;
+  const loginMessage = resolvedParams.message;
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
@@ -143,17 +143,17 @@ export default async function LoginPage(props: {
           </TabsContent>
         </Tabs>
 
-        {error && (
+        {loginError && (
           <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl animate-in shake duration-500">
             <p className="text-xs text-destructive font-bold text-center uppercase tracking-wider leading-relaxed">
-              {error}
+              {loginError}
             </p>
           </div>
         )}
-        {message && (
+        {loginMessage && (
           <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl animate-in zoom-in duration-500">
             <p className="text-xs text-primary font-bold text-center uppercase tracking-wider leading-relaxed">
-              {message}
+              {loginMessage}
             </p>
           </div>
         )}
