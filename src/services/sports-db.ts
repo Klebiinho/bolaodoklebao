@@ -1,10 +1,9 @@
-
 /**
  * @fileOverview Serviço para interação com a API TheSportsDB focado na Copa 2026.
  */
 
 const BASE_URL = 'https://www.thesportsdb.com/api/v1/json/123';
-const WORLD_UP_ID = '4429';
+const WORLD_CUP_ID = '4429';
 
 export interface SportsEvent {
   idEvent: string;
@@ -20,6 +19,7 @@ export interface SportsEvent {
   strTimestamp: string;
   intHomeScore: string | null;
   intAwayScore: string | null;
+  strStatus?: string; // Algumas versões da API retornam status
 }
 
 export interface Team {
@@ -27,7 +27,7 @@ export interface Team {
   strTeamBadge: string;
 }
 
-// Fallback de jogos para 2026 com estados variados para teste
+// Fallback de segurança caso a API gratuita retorne lista vazia para 2026
 const now = new Date();
 const formatIso = (date: Date) => date.toISOString();
 
@@ -76,29 +76,15 @@ const MOCK_2026_MATCHES: SportsEvent[] = [
     strTimestamp: formatIso(new Date(now.getTime() - 86400000)), // Ontem (ENCERRADO)
     intHomeScore: '0',
     intAwayScore: '2'
-  },
-  {
-    idEvent: 'mock4',
-    strEvent: 'França vs Alemanha',
-    strFilename: '',
-    strHomeTeam: 'France',
-    strAwayTeam: 'Germany',
-    idHomeTeam: '133613',
-    idAwayTeam: '133614',
-    dateEvent: '2026-06-20',
-    strTime: '20:00:00',
-    strThumb: '',
-    strTimestamp: formatIso(new Date(now.getTime() + 432000000)), // Em 5 dias
-    intHomeScore: null,
-    intAwayScore: null
   }
 ];
 
 export async function getWorldCupMatches(): Promise<SportsEvent[]> {
   try {
-    const response = await fetch(`${BASE_URL}/eventsseason.php?id=${WORLD_UP_ID}&s=2026`);
+    const response = await fetch(`${BASE_URL}/eventsseason.php?id=${WORLD_CUP_ID}&s=2026`);
     const data = await response.json();
     
+    // Se a API retornar eventos, usamos eles. Caso contrário, usamos o fallback de 2026.
     if (!data.events || data.events.length === 0) {
       return MOCK_2026_MATCHES;
     }

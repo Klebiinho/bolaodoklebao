@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,7 +15,7 @@ interface MatchProps {
   badgeA: string;
   badgeB: string;
   displayDate: string;
-  startTime: string; // ISO String
+  startTime: string; // ISO String ou similar
   realScoreA: string | null;
   realScoreB: string | null;
 }
@@ -29,7 +28,14 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
   useEffect(() => {
     const updateStatus = () => {
       const now = new Date();
-      const matchStart = parseISO(startTime);
+      let matchStart: Date;
+      
+      try {
+        matchStart = parseISO(startTime);
+      } catch (e) {
+        matchStart = new Date(startTime);
+      }
+
       const matchEnd = addHours(matchStart, 2); // Estimativa de 2h de jogo
       
       if (isAfter(now, matchEnd)) {
@@ -87,10 +93,10 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
   return (
     <Card className={cn(
       "bg-card border-border/50 p-5 transition-all duration-300 relative overflow-hidden group",
-      isInteractionDisabled ? "opacity-90" : "card-glow"
+      isInteractionDisabled ? "opacity-95" : "card-glow"
     )}>
       <div className={cn(
-        "absolute top-0 left-0 w-1 h-full transition-colors",
+        "absolute top-0 left-0 w-1.5 h-full transition-colors",
         status === 'LIVE' ? "bg-red-500 animate-pulse" : 
         status === 'FINISHED' ? "bg-muted" : "bg-primary/20 group-hover:bg-primary"
       )} />
@@ -105,76 +111,84 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
             )}
             {status === 'FINISHED' && <span className="text-muted-foreground">ENCERRADO</span>}
             {status === 'LOCKED' && <span className="text-red-400 flex items-center gap-1"><Lock className="w-3 h-3" /> BLOQUEADO</span>}
-            {status === 'UPCOMING' && <span className="text-accent flex items-center gap-1"><Clock className="w-3 h-3" /> ABERTO</span>}
+            {status === 'UPCOMING' && <span className="text-accent flex items-center gap-1"><Clock className="w-3 h-3" /> PALPITES ABERTOS</span>}
           </span>
           <span className="text-muted-foreground/60">{displayDate}</span>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-2">
+          {/* Time A */}
           <div className="flex flex-col items-center flex-1">
-            <img src={badgeA} alt={teamA} className="w-14 h-14 object-contain mb-2" />
-            <span className="text-xs font-headline font-bold text-center line-clamp-1">{teamA}</span>
+            <img src={badgeA} alt={teamA} className="w-16 h-16 object-contain mb-3 drop-shadow-md" />
+            <span className="text-xs font-headline font-black text-center uppercase tracking-tighter">{teamA}</span>
           </div>
 
-          <div className="flex flex-col items-center gap-1">
-            {/* Placar Real (Se existir) */}
+          {/* Área Central: Placar Real + Inputs */}
+          <div className="flex flex-col items-center justify-center gap-4 flex-[1.5]">
+            
+            {/* Placar Real da API (Exibido apenas em Live ou Finished) */}
             {(status === 'LIVE' || status === 'FINISHED') && (
-              <div className="flex items-center gap-4 mb-2">
-                <span className="text-4xl font-black italic text-foreground tracking-tighter">
-                  {realScoreA || '0'}
-                </span>
-                <span className="text-muted-foreground/30 font-bold text-xs">X</span>
-                <span className="text-4xl font-black italic text-foreground tracking-tighter">
-                  {realScoreB || '0'}
-                </span>
+              <div className="flex flex-col items-center mb-1">
+                <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest mb-1">Placar Real</span>
+                <div className="flex items-center gap-4 bg-secondary/20 px-4 py-1 rounded-full border border-border/30">
+                  <span className="text-3xl font-black italic tracking-tighter text-foreground">
+                    {realScoreA || '0'}
+                  </span>
+                  <span className="text-muted-foreground/30 font-bold text-xs">X</span>
+                  <span className="text-3xl font-black italic tracking-tighter text-foreground">
+                    {realScoreB || '0'}
+                  </span>
+                </div>
               </div>
             )}
 
             {/* Inputs de Palpite */}
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col items-center">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={2}
-                  disabled={isInteractionDisabled}
-                  value={prediction.a}
-                  onChange={(e) => handleInput('a', e.target.value)}
-                  className={cn(
-                    "w-10 h-12 text-center text-xl score-digit bg-secondary/30 rounded-lg border-2 border-transparent outline-none transition-all",
-                    !isInteractionDisabled && "focus:border-primary focus:bg-background",
-                    isInteractionDisabled && "cursor-not-allowed opacity-50 bg-secondary/10"
-                  )}
-                  placeholder="0"
-                />
-                <span className="text-[8px] text-muted-foreground mt-1 uppercase font-bold">Meu Palpite</span>
+            <div className="flex flex-col items-center w-full">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={2}
+                    disabled={isInteractionDisabled}
+                    value={prediction.a}
+                    onChange={(e) => handleInput('a', e.target.value)}
+                    className={cn(
+                      "w-12 h-14 text-center text-2xl font-black score-digit bg-secondary/30 rounded-xl border-2 border-transparent outline-none transition-all",
+                      !isInteractionDisabled && "focus:border-primary focus:bg-background",
+                      isInteractionDisabled && "cursor-not-allowed opacity-50 bg-secondary/10"
+                    )}
+                    placeholder="-"
+                  />
+                </div>
+                
+                <span className="text-muted-foreground/20 font-headline font-bold text-sm">VS</span>
+                
+                <div className="flex flex-col items-center">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={2}
+                    disabled={isInteractionDisabled}
+                    value={prediction.b}
+                    onChange={(e) => handleInput('b', e.target.value)}
+                    className={cn(
+                      "w-12 h-14 text-center text-2xl font-black score-digit bg-secondary/30 rounded-xl border-2 border-transparent outline-none transition-all",
+                      !isInteractionDisabled && "focus:border-primary focus:bg-background",
+                      isInteractionDisabled && "cursor-not-allowed opacity-50 bg-secondary/10"
+                    )}
+                    placeholder="-"
+                  />
+                </div>
               </div>
-              
-              <span className="text-muted-foreground/20 font-headline font-bold text-sm mb-4">VS</span>
-              
-              <div className="flex flex-col items-center">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={2}
-                  disabled={isInteractionDisabled}
-                  value={prediction.b}
-                  onChange={(e) => handleInput('b', e.target.value)}
-                  className={cn(
-                    "w-10 h-12 text-center text-xl score-digit bg-secondary/30 rounded-lg border-2 border-transparent outline-none transition-all",
-                    !isInteractionDisabled && "focus:border-primary focus:bg-background",
-                    isInteractionDisabled && "cursor-not-allowed opacity-50 bg-secondary/10"
-                  )}
-                  placeholder="0"
-                />
-                <span className="text-[8px] text-muted-foreground mt-1 uppercase font-bold">Meu Palpite</span>
-              </div>
+              <span className="text-[9px] text-muted-foreground mt-2 uppercase font-black tracking-widest">Meu Palpite</span>
             </div>
           </div>
 
+          {/* Time B */}
           <div className="flex flex-col items-center flex-1">
-            <img src={badgeB} alt={teamB} className="w-14 h-14 object-contain mb-2" />
-            <span className="text-xs font-headline font-bold text-center line-clamp-1">{teamB}</span>
+            <img src={badgeB} alt={teamB} className="w-16 h-16 object-contain mb-3 drop-shadow-md" />
+            <span className="text-xs font-headline font-black text-center uppercase tracking-tighter">{teamB}</span>
           </div>
         </div>
 
@@ -182,24 +196,31 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           <Button
             onClick={handleSave}
             className={cn(
-              "w-full h-11 font-headline font-bold text-xs uppercase tracking-wider transition-all rounded-xl",
+              "w-full h-12 font-headline font-bold text-sm uppercase tracking-wider transition-all rounded-xl",
               isSaved ? "bg-green-600 hover:bg-green-700" : "bg-primary hover:bg-primary/90"
             )}
           >
-            {isSaved ? <span className="flex items-center gap-2"><Check className="w-4 h-4" /> Palpite Registrado</span> : "Confirmar Palpite"}
+            {isSaved ? <span className="flex items-center gap-2"><Check className="w-5 h-5" /> Palpite Registrado</span> : "Confirmar Palpite"}
           </Button>
         )}
 
         {status === 'LOCKED' && (
-          <div className="w-full py-3 bg-secondary/30 rounded-xl flex items-center justify-center gap-2 border border-border/50">
+          <div className="w-full py-3.5 bg-secondary/30 rounded-xl flex items-center justify-center gap-2 border border-border/50">
             <Lock className="w-4 h-4 text-muted-foreground" />
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Entradas Bloqueadas (Pré-jogo)</span>
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Entradas Encerradas (Pré-jogo)</span>
           </div>
         )}
 
-        {(status === 'LIVE' || status === 'FINISHED') && (
-          <div className="w-full py-3 bg-secondary/10 rounded-xl flex items-center justify-center gap-2 border border-dashed border-border/50">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Acompanhando Resultado Real</span>
+        {status === 'LIVE' && (
+          <div className="w-full py-3.5 bg-red-500/10 rounded-xl flex items-center justify-center gap-2 border border-red-500/20">
+            <Circle className="w-3 h-3 fill-red-500 animate-pulse" />
+            <span className="text-[11px] font-bold text-red-500 uppercase tracking-tight">Jogo em Andamento</span>
+          </div>
+        )}
+
+        {status === 'FINISHED' && (
+          <div className="w-full py-3.5 bg-secondary/10 rounded-xl flex items-center justify-center gap-2 border border-dashed border-border/50">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Resultado Final Consolidado</span>
           </div>
         )}
       </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,27 +15,35 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const events = await getWorldCupMatches();
-      
-      const formattedMatches = await Promise.all(events.map(async (event) => {
-        const homeTeam = await getTeamDetails(event.idHomeTeam);
-        const awayTeam = await getTeamDetails(event.idAwayTeam);
+      try {
+        const events = await getWorldCupMatches();
+        
+        const formattedMatches = await Promise.all(events.map(async (event) => {
+          // Busca badges reais para cada time via API
+          const [homeTeam, awayTeam] = await Promise.all([
+            getTeamDetails(event.idHomeTeam),
+            getTeamDetails(event.idAwayTeam)
+          ]);
 
-        return {
-          id: event.idEvent,
-          teamA: event.strHomeTeam,
-          teamB: event.strAwayTeam,
-          badgeA: homeTeam?.strTeamBadge || `https://picsum.photos/seed/${event.idHomeTeam}/200/200`,
-          badgeB: awayTeam?.strTeamBadge || `https://picsum.photos/seed/${event.idAwayTeam}/200/200`,
-          displayDate: `${event.dateEvent} - ${event.strTime.substring(0, 5)}`,
-          startTime: event.strTimestamp || `${event.dateEvent}T${event.strTime}`,
-          realScoreA: event.intHomeScore,
-          realScoreB: event.intAwayScore,
-        };
-      }));
+          return {
+            id: event.idEvent,
+            teamA: event.strHomeTeam,
+            teamB: event.strAwayTeam,
+            badgeA: homeTeam?.strTeamBadge || `https://picsum.photos/seed/${event.idHomeTeam}/200/200`,
+            badgeB: awayTeam?.strTeamBadge || `https://picsum.photos/seed/${event.idAwayTeam}/200/200`,
+            displayDate: `${event.dateEvent} - ${event.strTime.substring(0, 5)}`,
+            startTime: event.strTimestamp || `${event.dateEvent}T${event.strTime}`,
+            realScoreA: event.intHomeScore,
+            realScoreB: event.intAwayScore,
+          };
+        }));
 
-      setMatches(formattedMatches);
-      setLoading(false);
+        setMatches(formattedMatches);
+      } catch (error) {
+        console.error("Erro ao carregar dados da API:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadData();
@@ -53,14 +60,14 @@ export default function Home() {
           <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Copa do Mundo 2026</p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end mr-2">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase leading-none">Saldo</span>
+            <span className="text-sm font-headline font-bold text-accent">1,250 pts</span>
+          </div>
           <button className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center relative">
             <Bell className="w-5 h-5 text-muted-foreground" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background" />
           </button>
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase leading-none">Seu Saldo</span>
-            <span className="text-sm font-headline font-bold text-accent">1,250 pts</span>
-          </div>
         </div>
       </header>
 
@@ -68,13 +75,13 @@ export default function Home() {
       <div className="px-6 py-6">
         <Tabs defaultValue="feed" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-secondary/50 h-12 mb-8 rounded-xl p-1">
-            <TabsTrigger value="feed" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+            <TabsTrigger value="feed" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all">
               <Gamepad2 className="w-4 h-4" /> Jogos
             </TabsTrigger>
-            <TabsTrigger value="rank" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+            <TabsTrigger value="rank" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all">
               <Trophy className="w-4 h-4" /> Ranking
             </TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+            <TabsTrigger value="history" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all">
               <History className="w-4 h-4" /> Histórico
             </TabsTrigger>
           </TabsList>
@@ -83,14 +90,14 @@ export default function Home() {
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-headline font-bold text-lg flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                Partidas 2026
+                Tabela 2026 (Real-time)
               </h2>
             </div>
             
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-sm text-muted-foreground font-medium animate-pulse">Buscando seleções...</p>
+              <div className="flex flex-col items-center justify-center py-24 gap-4">
+                <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest animate-pulse">Conectando ao banco de dados FIFA...</p>
               </div>
             ) : (
               <div className="grid gap-6">
@@ -99,8 +106,8 @@ export default function Home() {
                     <MatchCard key={match.id} {...match} />
                   ))
                 ) : (
-                  <div className="text-center py-12">
-                    <p className="text-sm text-muted-foreground">Aguardando definição dos confrontos.</p>
+                  <div className="text-center py-20 bg-secondary/10 rounded-3xl border border-dashed border-border/50">
+                    <p className="text-sm text-muted-foreground font-medium">Os confrontos de 2026 estão sendo definidos.</p>
                   </div>
                 )}
               </div>
@@ -112,8 +119,8 @@ export default function Home() {
                   <Gamepad2 className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <h3 className="font-headline font-bold text-sm text-foreground">Prepare sua torcida</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Dados oficiais da Copa do Mundo.</p>
+                  <h3 className="font-headline font-bold text-sm text-foreground">Sistema Oficial de Palpites</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Placares atualizados conforme a API TheSportsDB.</p>
                 </div>
               </div>
             )}
@@ -124,14 +131,14 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="history" className="focus-visible:outline-none">
-             <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
-                  <History className="w-8 h-8" />
+             <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
+                <div className="w-20 h-20 rounded-full bg-secondary/50 flex items-center justify-center text-muted-foreground">
+                  <History className="w-10 h-10" />
                 </div>
                 <div>
-                  <h3 className="font-headline font-bold">Histórico Vazio</h3>
-                  <p className="text-sm text-muted-foreground max-w-[240px] mt-2">
-                    Comece a palpitar nos jogos de 2026 para ver seu histórico aqui.
+                  <h3 className="font-headline font-bold text-lg">Histórico Vazio</h3>
+                  <p className="text-sm text-muted-foreground max-w-[280px] mt-2">
+                    Seus palpites finalizados aparecerão aqui assim que as partidas encerrarem.
                   </p>
                 </div>
              </div>
