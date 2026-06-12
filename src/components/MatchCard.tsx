@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Lock, Clock, Circle, Award } from 'lucide-react';
@@ -129,7 +130,15 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
 
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col items-center flex-1">
-            <img src={badgeA} alt={teamA} className="w-14 h-14 object-contain mb-3 drop-shadow-sm" />
+            <div className="relative w-14 h-14 mb-3">
+              <Image 
+                src={`${badgeA}/tiny`} 
+                alt={teamA} 
+                width={56} 
+                height={56}
+                className="object-contain drop-shadow-sm"
+              />
+            </div>
             <span className="text-[11px] font-headline font-black text-center uppercase tracking-tighter">{teamA}</span>
           </div>
 
@@ -182,7 +191,15 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           </div>
 
           <div className="flex flex-col items-center flex-1">
-            <img src={badgeB} alt={teamB} className="w-14 h-14 object-contain mb-3 drop-shadow-sm" />
+            <div className="relative w-14 h-14 mb-3">
+              <Image 
+                src={`${badgeB}/tiny`} 
+                alt={teamB} 
+                width={56} 
+                height={56}
+                className="object-contain drop-shadow-sm"
+              />
+            </div>
             <span className="text-[11px] font-headline font-black text-center uppercase tracking-tighter">{teamB}</span>
           </div>
         </div>
