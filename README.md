@@ -25,7 +25,7 @@ create table if not exists public."Predictions" (
 alter table public.profiles enable row level security;
 alter table public."Predictions" enable row level security;
 
--- 4. Políticas Profiles
+-- 4. Políticas Profiles (Usa blocos anônimos para evitar erro se já existirem)
 do $$ begin
   create policy "Perfis públicos são visíveis para todos" on public.profiles for select using (true);
 exception when others then null; end $$;
