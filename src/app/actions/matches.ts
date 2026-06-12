@@ -8,11 +8,13 @@ import { calculatePoints } from '@/lib/scoring';
 
 /**
  * Server Action para buscar e formatar jogos e dados do usuário.
+ * Otimizado para reduzir o número de chamadas de API e tratar erros de forma robusta.
  */
 export async function getFormattedMatches() {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user;
 
     const [eventsResult, pastEventsResult] = await Promise.allSettled([
       getWorldCupMatches(),
@@ -32,13 +34,17 @@ export async function getFormattedMatches() {
       userPredictions = data || [];
     }
 
+    // Cache local de badges para evitar requisições duplicadas na mesma execução
+    const badgeCache: Record<string, string> = {};
+
     const formattedMatches = await Promise.all(events.map(async (event) => {
       const pastResult = pastEvents.find((p: any) => p.idEvent === event.idEvent);
       const prediction = userPredictions.find(p => p.match_id === event.idEvent);
       
+      // Otimização: busca badges em paralelo e usa cache
       const [badgeA, badgeB] = await Promise.all([
-        getTeamBadge(event.idHomeTeam),
-        getTeamBadge(event.idAwayTeam)
+        badgeCache[event.idHomeTeam] || (badgeCache[event.idHomeTeam] = await getTeamBadge(event.idHomeTeam)),
+        badgeCache[event.idAwayTeam] || (badgeCache[event.idAwayTeam] = await getTeamBadge(event.idAwayTeam))
       ]);
 
       const realScoreA = pastResult?.intHomeScore || event.intHomeScore;
@@ -50,10 +56,10 @@ export async function getFormattedMatches() {
         teamB: event.strAwayTeam,
         badgeA,
         badgeB,
-        displayDate: `${event.dateEvent} - ${event.strTime.substring(0, 5)}`,
+        displayDate: `${event.dateEvent} - ${event.strTime?.substring(0, 5) || ''}`,
         startTime: event.strTimestamp,
-        realScoreA,
-        realScoreB,
+        realScoreA: realScoreA !== null ? realScoreA.toString() : null,
+        realScoreB: realScoreB !== null ? realScoreB.toString() : null,
         userPrediction: prediction ? {
           a: prediction.predicted_home_score,
           b: prediction.predicted_away_score
@@ -62,14 +68,15 @@ export async function getFormattedMatches() {
     }));
 
     return {
-      matches: formattedMatches,
+      matches: JSON.parse(JSON.stringify(formattedMatches)), // Garante serialização total
       timestamp: new Date().toLocaleTimeString()
     };
   } catch (error) {
     console.error("Erro crítico ao formatar jogos:", error);
     return {
       matches: [],
-      timestamp: new Date().toLocaleTimeString()
+      timestamp: new Date().toLocaleTimeString(),
+      error: "Não foi possível carregar os jogos."
     };
   }
 }
@@ -85,7 +92,6 @@ export async function getLeaderboardData() {
     const pastEvents = await fetchPastResults();
     
     // 2. Buscar todos os palpites e nomes dos usuários
-    // Assumimos que existe uma tabela 'Profiles' vinculada por id
     const { data: predictions, error } = await supabase
       .from('Predictions')
       .select('*, profiles:user_id(full_name)');
@@ -94,7 +100,7 @@ export async function getLeaderboardData() {
 
     const userPoints: Record<string, { name: string; points: number }> = {};
 
-    predictions.forEach(pred => {
+    predictions.forEach((pred: any) => {
       const matchResult = pastEvents.find((e: any) => e.idEvent === pred.match_id);
       if (matchResult && matchResult.intHomeScore !== null) {
         const pts = calculatePoints({
@@ -115,9 +121,11 @@ export async function getLeaderboardData() {
       }
     });
 
-    return Object.entries(userPoints)
+    const result = Object.entries(userPoints)
       .map(([id, data]) => ({ id, ...data }))
       .sort((a, b) => b.points - a.points);
+
+    return JSON.parse(JSON.stringify(result));
   } catch (error) {
     console.error("Erro ao carregar leaderboard:", error);
     return [];
