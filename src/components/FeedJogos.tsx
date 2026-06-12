@@ -1,12 +1,14 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MatchCard } from '@/components/MatchCard';
 import { Leaderboard } from '@/components/Leaderboard';
-import { Trophy, Gamepad2, History, TrendingUp, Loader2, RefreshCcw } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { Trophy, Gamepad2, History, TrendingUp, Loader2, RefreshCcw, Award } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { getFormattedMatches } from '@/app/actions/matches';
+import { isAfter, parseISO } from 'date-fns';
 
 interface FeedJogosProps {
   initialMatches: any[];
@@ -36,6 +38,14 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
     return () => clearInterval(interval);
   }, [loadData]);
 
+  const historyMatches = useMemo(() => {
+    return matches.filter(m => m.realScoreA !== null || isAfter(new Date(), parseISO(m.startTime)));
+  }, [matches]);
+
+  const activeMatches = useMemo(() => {
+    return matches.filter(m => m.realScoreA === null && !isAfter(new Date(), parseISO(m.startTime)));
+  }, [matches]);
+
   return (
     <div className="px-6 py-6">
       <Tabs defaultValue="feed" className="w-full">
@@ -55,7 +65,7 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-headline font-bold text-lg flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-primary" />
-              Partidas
+              Partidas Abertas
             </h2>
             <Button 
               variant="ghost" 
@@ -74,9 +84,15 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
           </div>
           
           <div className="grid gap-6">
-            {matches.map((match) => (
-              <MatchCard key={match.id} {...match} />
-            ))}
+            {activeMatches.length > 0 ? (
+              activeMatches.map((match) => (
+                <MatchCard key={match.id} {...match} />
+              ))
+            ) : (
+              <div className="text-center py-12 border border-dashed border-border rounded-2xl">
+                <p className="text-sm text-muted-foreground">Nenhuma partida aberta no momento.</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -85,10 +101,24 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
         </TabsContent>
 
         <TabsContent value="history" className="focus-visible:outline-none">
-           <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
-              <History className="w-12 h-12 text-muted-foreground/30" />
-              <h3 className="font-headline font-bold text-lg">Histórico de Palpites</h3>
-              <p className="text-sm text-muted-foreground max-w-[280px]">Os jogos finalizados e seus pontos aparecerão aqui em breve.</p>
+           <div className="space-y-6">
+              <h2 className="font-headline font-bold text-lg flex items-center gap-2">
+                <Award className="w-5 h-5 text-primary" />
+                Meus Resultados
+              </h2>
+              <div className="grid gap-6">
+                {historyMatches.length > 0 ? (
+                  historyMatches.map((match) => (
+                    <MatchCard key={match.id} {...match} />
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
+                    <History className="w-12 h-12 text-muted-foreground/30" />
+                    <h3 className="font-headline font-bold text-lg">Sem Histórico</h3>
+                    <p className="text-sm text-muted-foreground max-w-[280px]">Os jogos finalizados e seus pontos aparecerão aqui assim que as partidas terminarem.</p>
+                  </div>
+                )}
+              </div>
            </div>
         </TabsContent>
       </Tabs>

@@ -19,6 +19,11 @@ export interface ScoreComparison {
 export function calculatePoints(data: ScoreComparison): number {
   const { realHome, realAway, predHome, predAway } = data;
 
+  // Se algum dado estiver faltando, retorna 0
+  if (realHome === null || realAway === null || predHome === undefined || predAway === undefined) {
+    return 0;
+  }
+
   // Placar Exato
   if (realHome === predHome && realAway === predAway) {
     return 3;
