@@ -4,43 +4,44 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MatchCard } from '@/components/MatchCard';
 import { Leaderboard } from '@/components/Leaderboard';
-import { Trophy, Gamepad2, History, TrendingUp, Bell } from 'lucide-react';
+import { Trophy, Gamepad2, History, TrendingUp, Bell, Loader2 } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useEffect, useState } from 'react';
-
-// Função auxiliar para gerar datas para o mock (evita erros de hidratação)
-const getMatchTime = (hours: number, daysFromNow: number = 0) => {
-  const d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
-  d.setHours(hours, 0, 0, 0);
-  return d.toISOString();
-};
+import { getWorldCupMatches, getTeamDetails, SportsEvent } from '@/services/sports-db';
 
 export default function Home() {
   const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Definindo as datas no cliente para consistência
-    setMatches([
-      {
-        id: 'm1',
-        teamA: 'Brasil',
-        teamB: 'França',
-        badgeA: 'https://picsum.photos/seed/brazil/200/200',
-        badgeB: 'https://picsum.photos/seed/france/200/200',
-        displayDate: 'Hoje, 21:00',
-        startTime: getMatchTime(21, 0),
-      },
-      {
-        id: 'm2',
-        teamA: 'Argentina',
-        teamB: 'Alemanha',
-        badgeA: 'https://picsum.photos/seed/argentina/200/200',
-        badgeB: 'https://picsum.photos/seed/germany/200/200',
-        displayDate: 'Amanhã, 16:30',
-        startTime: getMatchTime(16, 30, 1),
-      }
-    ]);
+    async function loadData() {
+      setLoading(true);
+      const events = await getWorldCupMatches();
+      
+      // Pegamos apenas os primeiros 5 para não estourar o limite da API gratuita rapidamente
+      const limitedEvents = events.slice(0, 5);
+
+      const formattedMatches = await Promise.all(limitedEvents.map(async (event) => {
+        // Buscamos os badges (escudos) dos times
+        const homeTeam = await getTeamDetails(event.idHomeTeam);
+        const awayTeam = await getTeamDetails(event.idAwayTeam);
+
+        return {
+          id: event.idEvent,
+          teamA: event.strHomeTeam,
+          teamB: event.strAwayTeam,
+          badgeA: homeTeam?.strTeamBadge || `https://picsum.photos/seed/${event.idHomeTeam}/200/200`,
+          badgeB: awayTeam?.strTeamBadge || `https://picsum.photos/seed/${event.idAwayTeam}/200/200`,
+          displayDate: `${event.dateEvent} - ${event.strTime.substring(0, 5)}`,
+          startTime: event.strTimestamp || `${event.dateEvent}T${event.strTime}`,
+        };
+      }));
+
+      setMatches(formattedMatches);
+      setLoading(false);
+    }
+
+    loadData();
   }, []);
 
   return (
@@ -51,7 +52,7 @@ export default function Home() {
           <h1 className="font-headline font-black text-2xl tracking-tighter text-primary italic uppercase leading-none">
             Palpiteiro<span className="text-foreground">Pro</span>
           </h1>
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Sport Prediction Engine</p>
+          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Copa do Mundo Edition</p>
         </div>
         <div className="flex items-center gap-3">
           <button className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center relative">
@@ -84,25 +85,40 @@ export default function Home() {
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-headline font-bold text-lg flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                Próximos Confrontos
+                Partidas Reais
               </h2>
             </div>
             
-            <div className="grid gap-6">
-              {matches.map((match) => (
-                <MatchCard key={match.id} {...match} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-sm text-muted-foreground font-medium animate-pulse">Carregando jogos da Copa...</p>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {matches.length > 0 ? (
+                  matches.map((match) => (
+                    <MatchCard key={match.id} {...match} />
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-sm text-muted-foreground">Nenhum jogo encontrado no momento.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div className="mt-12 p-8 bg-secondary/20 rounded-3xl border-2 border-dashed border-border/50 text-center flex flex-col items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center">
-                <Gamepad2 className="w-6 h-6 text-muted-foreground" />
+            {!loading && (
+              <div className="mt-12 p-8 bg-secondary/20 rounded-3xl border-2 border-dashed border-border/50 text-center flex flex-col items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center">
+                  <Gamepad2 className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-headline font-bold text-sm text-foreground">Mais jogos em breve</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Dados reais via TheSportsDB API.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-headline font-bold text-sm text-foreground">Mais jogos em breve</h3>
-                <p className="text-xs text-muted-foreground mt-1">Fique ligado para novas oportunidades de palpite.</p>
-              </div>
-            </div>
+            )}
           </TabsContent>
 
           <TabsContent value="rank" className="focus-visible:outline-none">
