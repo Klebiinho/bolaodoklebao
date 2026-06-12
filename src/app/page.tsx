@@ -18,7 +18,6 @@ export default function Home() {
       setLoading(true);
       const events = await getWorldCupMatches();
       
-      // Mapeamento para buscar os escudos reais de cada seleção
       const formattedMatches = await Promise.all(events.map(async (event) => {
         const homeTeam = await getTeamDetails(event.idHomeTeam);
         const awayTeam = await getTeamDetails(event.idAwayTeam);
@@ -31,6 +30,8 @@ export default function Home() {
           badgeB: awayTeam?.strTeamBadge || `https://picsum.photos/seed/${event.idAwayTeam}/200/200`,
           displayDate: `${event.dateEvent} - ${event.strTime.substring(0, 5)}`,
           startTime: event.strTimestamp || `${event.dateEvent}T${event.strTime}`,
+          realScoreA: event.intHomeScore,
+          realScoreB: event.intAwayScore,
         };
       }));
 
@@ -137,22 +138,6 @@ export default function Home() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Navigation Mobile Fixed */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/50 px-8 py-4 flex items-center justify-between md:hidden z-50">
-        <button className="flex flex-col items-center gap-1 text-primary">
-          <Gamepad2 className="w-6 h-6" />
-          <span className="text-[10px] font-bold uppercase tracking-tighter">Jogos</span>
-        </button>
-        <button className="flex flex-col items-center gap-1 text-muted-foreground">
-          <Trophy className="w-6 h-6" />
-          <span className="text-[10px] font-bold uppercase tracking-tighter">Ranking</span>
-        </button>
-        <button className="flex flex-col items-center gap-1 text-muted-foreground">
-          <History className="w-6 h-6" />
-          <span className="text-[10px] font-bold uppercase tracking-tighter">Histórico</span>
-        </button>
-      </nav>
 
       <Toaster />
     </main>

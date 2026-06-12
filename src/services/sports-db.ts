@@ -18,6 +18,8 @@ export interface SportsEvent {
   strTime: string;
   strThumb: string;
   strTimestamp: string;
+  intHomeScore: string | null;
+  intAwayScore: string | null;
 }
 
 export interface Team {
@@ -25,7 +27,10 @@ export interface Team {
   strTeamBadge: string;
 }
 
-// Fallback de jogos para 2026 (EUA, México e Canadá) com IDs reais para busca de escudos
+// Fallback de jogos para 2026 com estados variados para teste
+const now = new Date();
+const formatIso = (date: Date) => date.toISOString();
+
 const MOCK_2026_MATCHES: SportsEvent[] = [
   {
     idEvent: 'mock1',
@@ -38,7 +43,9 @@ const MOCK_2026_MATCHES: SportsEvent[] = [
     dateEvent: '2026-06-11',
     strTime: '21:00:00',
     strThumb: '',
-    strTimestamp: '2026-06-11T21:00:00Z'
+    strTimestamp: formatIso(new Date(now.getTime() + 86400000)), // Amanhã
+    intHomeScore: null,
+    intAwayScore: null
   },
   {
     idEvent: 'mock2',
@@ -51,7 +58,9 @@ const MOCK_2026_MATCHES: SportsEvent[] = [
     dateEvent: '2026-06-15',
     strTime: '18:00:00',
     strThumb: '',
-    strTimestamp: '2026-06-15T18:00:00Z'
+    strTimestamp: formatIso(new Date(now.getTime() - 3600000)), // Começou faz 1 hora (AO VIVO)
+    intHomeScore: '1',
+    intAwayScore: '1'
   },
   {
     idEvent: 'mock3',
@@ -64,7 +73,9 @@ const MOCK_2026_MATCHES: SportsEvent[] = [
     dateEvent: '2026-06-12',
     strTime: '15:00:00',
     strThumb: '',
-    strTimestamp: '2026-06-12T15:00:00Z'
+    strTimestamp: formatIso(new Date(now.getTime() - 86400000)), // Ontem (ENCERRADO)
+    intHomeScore: '0',
+    intAwayScore: '2'
   },
   {
     idEvent: 'mock4',
@@ -77,30 +88,17 @@ const MOCK_2026_MATCHES: SportsEvent[] = [
     dateEvent: '2026-06-20',
     strTime: '20:00:00',
     strThumb: '',
-    strTimestamp: '2026-06-20T20:00:00Z'
-  },
-  {
-    idEvent: 'mock5',
-    strEvent: 'Espanha vs Portugal',
-    strFilename: '',
-    strHomeTeam: 'Spain',
-    strAwayTeam: 'Portugal',
-    idHomeTeam: '133615',
-    idAwayTeam: '133616',
-    dateEvent: '2026-06-22',
-    strTime: '16:00:00',
-    strThumb: '',
-    strTimestamp: '2026-06-22T16:00:00Z'
+    strTimestamp: formatIso(new Date(now.getTime() + 432000000)), // Em 5 dias
+    intHomeScore: null,
+    intAwayScore: null
   }
 ];
 
 export async function getWorldCupMatches(): Promise<SportsEvent[]> {
   try {
-    // Tenta buscar temporada 2026
     const response = await fetch(`${BASE_URL}/eventsseason.php?id=${WORLD_UP_ID}&s=2026`);
     const data = await response.json();
     
-    // Se a API não retornar nada para 2026 (comum na chave 123), usamos o mock planejado
     if (!data.events || data.events.length === 0) {
       return MOCK_2026_MATCHES;
     }
