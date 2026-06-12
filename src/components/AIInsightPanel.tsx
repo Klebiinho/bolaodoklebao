@@ -1,9 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { aiMatchInsights, AIMatchInsightsOutput } from '@/ai/flows/ai-match-insights';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Loader2, Trophy, BrainCircuit, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -39,19 +38,12 @@ export function AIInsightPanel({ teamA, teamB, teamARecentForm, teamBRecentForm,
     }
   };
 
+  useEffect(() => {
+    fetchInsights();
+  }, []);
+
   return (
     <div className="mt-4">
-      {!insights && !loading && (
-        <Button
-          onClick={fetchInsights}
-          variant="outline"
-          className="w-full border-primary/20 hover:border-primary/50 text-primary flex items-center gap-2 group"
-        >
-          <BrainCircuit className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-          Análise do Especialista AI
-        </Button>
-      )}
-
       {loading && (
         <div className="flex flex-col items-center justify-center p-8 bg-card/50 rounded-xl border border-dashed border-primary/20 animate-pulse">
           <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
