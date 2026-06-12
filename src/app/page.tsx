@@ -7,7 +7,7 @@ import { Leaderboard } from '@/components/Leaderboard';
 import { Trophy, Gamepad2, History, TrendingUp, Bell, Loader2 } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useEffect, useState } from 'react';
-import { getWorldCupMatches, getTeamDetails, SportsEvent } from '@/services/sports-db';
+import { getWorldCupMatches, getTeamDetails } from '@/services/sports-db';
 
 export default function Home() {
   const [matches, setMatches] = useState<any[]>([]);
@@ -18,11 +18,8 @@ export default function Home() {
       setLoading(true);
       const events = await getWorldCupMatches();
       
-      // Pegamos apenas os primeiros 5 para não estourar o limite da API gratuita rapidamente
-      const limitedEvents = events.slice(0, 5);
-
-      const formattedMatches = await Promise.all(limitedEvents.map(async (event) => {
-        // Buscamos os badges (escudos) dos times
+      const formattedMatches = await Promise.all(events.map(async (event) => {
+        // Tentamos buscar escudos reais, caso contrário usamos placeholders temáticos
         const homeTeam = await getTeamDetails(event.idHomeTeam);
         const awayTeam = await getTeamDetails(event.idAwayTeam);
 
@@ -52,7 +49,7 @@ export default function Home() {
           <h1 className="font-headline font-black text-2xl tracking-tighter text-primary italic uppercase leading-none">
             Palpiteiro<span className="text-foreground">Pro</span>
           </h1>
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Copa do Mundo Edition</p>
+          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Copa do Mundo 2026</p>
         </div>
         <div className="flex items-center gap-3">
           <button className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center relative">
@@ -85,14 +82,14 @@ export default function Home() {
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-headline font-bold text-lg flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                Partidas Reais
+                Partidas 2026
               </h2>
             </div>
             
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-sm text-muted-foreground font-medium animate-pulse">Carregando jogos da Copa...</p>
+                <p className="text-sm text-muted-foreground font-medium animate-pulse">Preparando a Copa de 2026...</p>
               </div>
             ) : (
               <div className="grid gap-6">
@@ -102,7 +99,7 @@ export default function Home() {
                   ))
                 ) : (
                   <div className="text-center py-12">
-                    <p className="text-sm text-muted-foreground">Nenhum jogo encontrado no momento.</p>
+                    <p className="text-sm text-muted-foreground">Aguardando definição dos confrontos.</p>
                   </div>
                 )}
               </div>
@@ -114,8 +111,8 @@ export default function Home() {
                   <Gamepad2 className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <h3 className="font-headline font-bold text-sm text-foreground">Mais jogos em breve</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Dados reais via TheSportsDB API.</p>
+                  <h3 className="font-headline font-bold text-sm text-foreground">Prepare sua torcida</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Dados atualizados para o mundial de 2026.</p>
                 </div>
               </div>
             )}
@@ -131,9 +128,9 @@ export default function Home() {
                   <History className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="font-headline font-bold">Nenhum palpite resolvido</h3>
+                  <h3 className="font-headline font-bold">Histórico Vazio</h3>
                   <p className="text-sm text-muted-foreground max-w-[240px] mt-2">
-                    Acompanhe aqui o resultado dos seus palpites anteriores e quantos pontos você ganhou.
+                    Comece a palpitar nos jogos de 2026 para ver seu histórico aqui.
                   </p>
                 </div>
              </div>
