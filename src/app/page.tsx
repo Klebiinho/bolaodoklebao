@@ -6,31 +6,43 @@ import { MatchCard } from '@/components/MatchCard';
 import { Leaderboard } from '@/components/Leaderboard';
 import { Trophy, Gamepad2, History, TrendingUp, Bell } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
+import { useEffect, useState } from 'react';
 
-const FEATURED_MATCHES = [
-  {
-    id: 'm1',
-    teamA: 'Brasil',
-    teamB: 'França',
-    badgeA: 'https://picsum.photos/seed/br/200/200',
-    badgeB: 'https://picsum.photos/seed/fr/200/200',
-    date: 'Hoje, 21:00',
-    teamARecentForm: 'Brasil venceu os últimos 4 jogos, ataque em excelente fase com média de 2.5 gols por partida.',
-    teamBRecentForm: 'França vem de um empate e duas vitórias apertadas, defesa sólida mas meio-campo desfalcado.'
-  },
-  {
-    id: 'm2',
-    teamA: 'Argentina',
-    teamB: 'Alemanha',
-    badgeA: 'https://picsum.photos/seed/ar/200/200',
-    badgeB: 'https://picsum.photos/seed/de/200/200',
-    date: 'Amanhã, 16:30',
-    teamARecentForm: 'Messi em grande fase, time invicto há 10 jogos em casa.',
-    teamBRecentForm: 'Time em reconstrução, oscilando muito nos resultados fora de casa.'
-  }
-];
+// Função auxiliar para gerar datas para o mock (evita erros de hidratação)
+const getMatchTime = (hours: number, daysFromNow: number = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  d.setHours(hours, 0, 0, 0);
+  return d.toISOString();
+};
 
 export default function Home() {
+  const [matches, setMatches] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Definindo as datas no cliente para consistência
+    setMatches([
+      {
+        id: 'm1',
+        teamA: 'Brasil',
+        teamB: 'França',
+        badgeA: 'https://picsum.photos/seed/brazil/200/200',
+        badgeB: 'https://picsum.photos/seed/france/200/200',
+        displayDate: 'Hoje, 21:00',
+        startTime: getMatchTime(21, 0),
+      },
+      {
+        id: 'm2',
+        teamA: 'Argentina',
+        teamB: 'Alemanha',
+        badgeA: 'https://picsum.photos/seed/argentina/200/200',
+        badgeB: 'https://picsum.photos/seed/germany/200/200',
+        displayDate: 'Amanhã, 16:30',
+        startTime: getMatchTime(16, 30, 1),
+      }
+    ]);
+  }, []);
+
   return (
     <main className="min-h-screen max-w-2xl mx-auto pb-24 md:pb-8">
       {/* Header */}
@@ -72,12 +84,12 @@ export default function Home() {
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-headline font-bold text-lg flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                Destaques do Dia
+                Próximos Confrontos
               </h2>
             </div>
             
             <div className="grid gap-6">
-              {FEATURED_MATCHES.map((match) => (
+              {matches.map((match) => (
                 <MatchCard key={match.id} {...match} />
               ))}
             </div>
@@ -113,7 +125,7 @@ export default function Home() {
         </Tabs>
       </div>
 
-      {/* Navigation Mobile Fixed (optional enhancement) */}
+      {/* Navigation Mobile Fixed */}
       <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/50 px-8 py-4 flex items-center justify-between md:hidden z-50">
         <button className="flex flex-col items-center gap-1 text-primary">
           <Gamepad2 className="w-6 h-6" />
