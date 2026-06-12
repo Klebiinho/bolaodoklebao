@@ -11,27 +11,65 @@ import { calculatePoints } from '@/lib/scoring';
 import { createClient } from '@/utils/supabase/client';
 
 const COUNTRY_TRANSLATIONS: Record<string, string> = {
-  "USA": "EUA",
-  "Mexico": "México",
+  // Américas (CONMEBOL e CONCACAF)
+  "Argentina": "Argentina",
   "Brazil": "Brasil",
+  "Canada": "Canadá",
+  "Colombia": "Colômbia",
+  "Curacao": "Curaçao",
+  "Ecuador": "Equador",
+  "Haiti": "Haiti",
+  "Mexico": "México",
+  "Panama": "Panamá",
+  "Paraguay": "Paraguai",
+  "United States": "Estados Unidos",
+  "USA": "Estados Unidos",
+  "Uruguay": "Uruguai",
+
+  // Europa (UEFA)
+  "Austria": "Áustria",
+  "Belgium": "Bélgica",
+  "Bosnia and Herzegovina": "Bósnia e Herzegovina",
+  "Croatia": "Croácia",
+  "Czech Republic": "República Tcheca",
+  "England": "Inglaterra",
   "France": "França",
   "Germany": "Alemanha",
-  "Argentina": "Argentina",
-  "Spain": "Espanha",
-  "England": "Inglaterra",
-  "Portugal": "Portugal",
-  "Italy": "Itália",
   "Netherlands": "Holanda",
-  "Belgium": "Bélgica",
-  "Croatia": "Croácia",
-  "Uruguay": "Uruguai",
-  "Colombia": "Colômbia",
-  "Senegal": "Senegal",
-  "Morocco": "Marrocos",
+  "Norway": "Noruega",
+  "Portugal": "Portugal",
+  "Scotland": "Escócia",
+  "Spain": "Espanha",
+  "Sweden": "Suécia",
+  "Switzerland": "Suíça",
+  "Turkey": "Turquia",
+  "Türkiye": "Turquia",
+
+  // Ásia e Oceania (AFC e OFC)
+  "Australia": "Austrália",
+  "Iran": "Irã",
+  "Iraq": "Iraque",
   "Japan": "Japão",
+  "Jordan": "Jordânia",
+  "New Zealand": "Nova Zelândia",
+  "Qatar": "Catar",
+  "Saudi Arabia": "Arábia Saudita",
   "South Korea": "Coreia do Sul",
-  "Canada": "Canadá",
-  "South Africa": "África do Sul"
+  "Uzbekistan": "Uzbequistão",
+
+  // África (CAF)
+  "Algeria": "Argélia",
+  "Cape Verde": "Cabo Verde",
+  "DR Congo": "RD Congo",
+  "Egypt": "Egito",
+  "Ghana": "Gana",
+  "Ivory Coast": "Costa do Marfim",
+  "Morocco": "Marrocos",
+  "Senegal": "Senegal",
+  "South Africa": "África do Sul",
+  "Tunisia": "Tunísia",
+  "Italy": "Itália",
+  "Belgium": "Bélgica"
 };
 
 interface MatchProps {
@@ -98,7 +136,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
         .select('*')
         .eq('match_id', id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (data && !error) {
         setPrediction({
