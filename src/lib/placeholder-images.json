@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "brazil-badge",
+      "description": "Brazil National Team Badge",
+      "imageUrl": "https://picsum.photos/seed/brazil/200/200",
+      "imageHint": "Brazil flag badge"
+    },
+    {
+      "id": "france-badge",
+      "description": "France National Team Badge",
+      "imageUrl": "https://picsum.photos/seed/france/200/200",
+      "imageHint": "France flag badge"
+    },
+    {
+      "id": "argentina-badge",
+      "description": "Argentina National Team Badge",
+      "imageUrl": "https://picsum.photos/seed/argentina/200/200",
+      "imageHint": "Argentina flag badge"
+    },
+    {
+      "id": "germany-badge",
+      "description": "Germany National Team Badge",
+      "imageUrl": "https://picsum.photos/seed/germany/200/200",
+      "imageHint": "Germany flag badge"
+    }
+  ]
 }
