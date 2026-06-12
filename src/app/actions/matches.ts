@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getWorldCupMatches, getTeamBadge } from '@/services/sports-db';
@@ -11,7 +12,6 @@ export async function getFormattedMatches() {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
 
-    // Busca dados em paralelo para performance
     const [eventsResult, pastEventsResult] = await Promise.allSettled([
       getWorldCupMatches(),
       fetchPastResults()
@@ -38,13 +38,11 @@ export async function getFormattedMatches() {
       const pastResult = pastEvents.find((p: any) => p.idEvent === event.idEvent);
       const prediction = userPredictions.find(p => p.match_id === event.idEvent);
       
-      // Busca escudos com cache por requisição
       const [badgeA, badgeB] = await Promise.all([
         badgeCache[event.idHomeTeam] || (badgeCache[event.idHomeTeam] = await getTeamBadge(event.idHomeTeam)),
         badgeCache[event.idAwayTeam] || (badgeCache[event.idAwayTeam] = await getTeamBadge(event.idAwayTeam))
       ]);
 
-      // Prioriza placar real da API de resultados passados
       const realScoreA = pastResult?.intHomeScore || event.intHomeScore;
       const realScoreB = pastResult?.intAwayScore || event.intAwayScore;
 
@@ -84,14 +82,27 @@ export async function getLeaderboardData() {
     const supabase = await createClient();
     const pastEvents = await fetchPastResults();
     
-    // Busca predições e faz o join com profiles para pegar o nome real
-    const { data: predictions, error } = await supabase
+    // Busca predições. Fazemos a busca de perfis separadamente para garantir compatibilidade
+    // caso o relacionamento de chave estrangeira não seja detectado automaticamente.
+    const { data: predictions, error: predError } = await supabase
       .from('Predictions')
-      .select('*, profiles:user_id(full_name)');
+      .select('*');
 
-    if (error || !predictions) {
-      console.warn("Problema ao buscar predições:", error);
+    if (predError || !predictions) {
+      console.warn("Problema ao buscar predições:", predError);
       return [];
+    }
+
+    // Busca todos os perfis para fazer o merge em memória (mais resiliente)
+    const { data: profiles, error: profError } = await supabase
+      .from('profiles')
+      .select('id, full_name');
+
+    const profileMap: Record<string, string> = {};
+    if (profiles) {
+      profiles.forEach(p => {
+        profileMap[p.id] = p.full_name || 'Usuário Sem Nome';
+      });
     }
 
     const userPoints: Record<string, { name: string; points: number }> = {};
@@ -99,7 +110,6 @@ export async function getLeaderboardData() {
     predictions.forEach((pred: any) => {
       const matchResult = pastEvents.find((e: any) => e.idEvent === pred.match_id);
       
-      // Só calcula pontos se a partida já tiver resultado real
       if (matchResult && matchResult.intHomeScore !== null && matchResult.intAwayScore !== null) {
         const pts = calculatePoints({
           realHome: parseInt(matchResult.intHomeScore),
@@ -111,7 +121,7 @@ export async function getLeaderboardData() {
         const userId = pred.user_id;
         if (!userPoints[userId]) {
           userPoints[userId] = { 
-            name: pred.profiles?.full_name || 'Usuário Sem Nome', 
+            name: profileMap[userId] || 'Anônimo', 
             points: 0 
           };
         }
