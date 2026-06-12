@@ -8,13 +8,19 @@ import { fetchPastResults } from '@/app/actions/sportsApi';
  */
 export async function getFormattedMatches() {
   try {
-    const [events, pastEvents] = await Promise.all([
+    // Usamos Promise.allSettled para garantir que mesmo que uma chamada falhe, tenhamos algo para mostrar
+    const [eventsResult, pastEventsResult] = await Promise.allSettled([
       getWorldCupMatches(),
       fetchPastResults()
     ]);
     
+    const events = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
+    const pastEvents = pastEventsResult.status === 'fulfilled' ? pastEventsResult.value : [];
+    
     const formattedMatches = await Promise.all(events.map(async (event) => {
       const pastResult = pastEvents.find((p: any) => p.idEvent === event.idEvent);
+      
+      // Tentamos buscar badges, se falhar usamos o fallback interno do getTeamBadge
       const [badgeA, badgeB] = await Promise.all([
         getTeamBadge(event.idHomeTeam),
         getTeamBadge(event.idAwayTeam)
@@ -38,7 +44,11 @@ export async function getFormattedMatches() {
       timestamp: new Date().toLocaleTimeString()
     };
   } catch (error) {
-    console.error("Erro ao formatar jogos:", error);
-    throw new Error("Erro ao carregar dados da Copa.");
+    console.error("Erro crítico ao formatar jogos:", error);
+    // Em caso de erro catastrófico, retornamos uma estrutura mínima para não quebrar o app
+    return {
+      matches: [],
+      timestamp: new Date().toLocaleTimeString()
+    };
   }
 }

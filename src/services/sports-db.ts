@@ -18,6 +18,8 @@ export interface SportsEvent {
   intHomeScore: string | null;
   intAwayScore: string | null;
   strStatus?: string;
+  strHomeTeamBadge?: string;
+  strAwayTeamBadge?: string;
 }
 
 /**
@@ -29,7 +31,10 @@ export async function getWorldCupMatches(): Promise<SportsEvent[]> {
       next: { revalidate: 60 } 
     });
     
-    if (!response.ok) throw new Error('Falha na API TheSportsDB');
+    if (!response.ok) {
+      console.warn('API TheSportsDB retornou erro, usando mocks.');
+      return getMockMatches();
+    }
     
     const data = await response.json();
     
@@ -52,6 +57,9 @@ export async function getTeamBadge(idTeam: string): Promise<string> {
     const response = await fetch(`${BASE_URL}/lookupteam.php?id=${idTeam}`, {
       next: { revalidate: 3600 }
     });
+    
+    if (!response.ok) return `https://picsum.photos/seed/${idTeam}/200/200`;
+    
     const data = await response.json();
     return data.teams?.[0]?.strTeamBadge || `https://picsum.photos/seed/${idTeam}/200/200`;
   } catch (error) {
