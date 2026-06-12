@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy } from 'lucide-react';
-import Link from 'next/link';
 
 export default function LoginPage({
   searchParams,
@@ -29,10 +28,20 @@ export default function LoginPage({
           <CardHeader>
             <CardTitle className="font-headline font-bold">Acesse sua conta</CardTitle>
             <CardDescription>
-              Entre com seu e-mail ou crie uma conta nova.
+              Entre com seu e-mail ou preencha o nome para criar uma conta nova.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome (necessário para cadastro)</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Seu nome completo"
+                className="bg-secondary/30"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
@@ -70,12 +79,17 @@ export default function LoginPage({
             <Button formAction={login} className="w-full font-bold uppercase tracking-wider h-11">
               Entrar
             </Button>
+            <div className="w-full flex items-center gap-2 py-2">
+              <div className="h-px bg-border flex-1" />
+              <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Novo aqui?</span>
+              <div className="h-px bg-border flex-1" />
+            </div>
             <Button
               formAction={signup}
               variant="outline"
               className="w-full font-bold uppercase tracking-wider h-11 border-border/50"
             >
-              Cadastrar
+              Cadastrar com Nome
             </Button>
           </CardFooter>
         </form>
