@@ -11,6 +11,7 @@ export async function getFormattedMatches() {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
 
+    // Busca dados em paralelo para performance
     const [eventsResult, pastEventsResult] = await Promise.allSettled([
       getWorldCupMatches(),
       fetchPastResults()
@@ -21,11 +22,14 @@ export async function getFormattedMatches() {
     
     let userPredictions: any[] = [];
     if (user) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('Predictions')
         .select('*')
         .eq('user_id', user.id);
-      userPredictions = data || [];
+      
+      if (!error && data) {
+        userPredictions = data;
+      }
     }
 
     const badgeCache: Record<string, string> = {};
@@ -34,6 +38,7 @@ export async function getFormattedMatches() {
       const pastResult = pastEvents.find((p: any) => p.idEvent === event.idEvent);
       const prediction = userPredictions.find(p => p.match_id === event.idEvent);
       
+      // Busca escudos com cache por requisição
       const [badgeA, badgeB] = await Promise.all([
         badgeCache[event.idHomeTeam] || (badgeCache[event.idHomeTeam] = await getTeamBadge(event.idHomeTeam)),
         badgeCache[event.idAwayTeam] || (badgeCache[event.idAwayTeam] = await getTeamBadge(event.idAwayTeam))
@@ -78,17 +83,23 @@ export async function getLeaderboardData() {
     const supabase = await createClient();
     const pastEvents = await fetchPastResults();
     
+    // Busca predições e faz o join com profiles para pegar o nome real
     const { data: predictions, error } = await supabase
       .from('Predictions')
       .select('*, profiles:user_id(full_name)');
 
-    if (error || !predictions) return [];
+    if (error || !predictions) {
+      console.warn("Nenhuma predição encontrada ou erro no banco:", error);
+      return [];
+    }
 
     const userPoints: Record<string, { name: string; points: number }> = {};
 
     predictions.forEach((pred: any) => {
       const matchResult = pastEvents.find((e: any) => e.idEvent === pred.match_id);
-      if (matchResult && matchResult.intHomeScore !== null) {
+      
+      // Só calcula pontos se a partida já tiver resultado real
+      if (matchResult && matchResult.intHomeScore !== null && matchResult.intAwayScore !== null) {
         const pts = calculatePoints({
           realHome: parseInt(matchResult.intHomeScore),
           realAway: parseInt(matchResult.intAwayScore),
@@ -99,7 +110,7 @@ export async function getLeaderboardData() {
         const userId = pred.user_id;
         if (!userPoints[userId]) {
           userPoints[userId] = { 
-            name: pred.profiles?.full_name || 'Anônimo', 
+            name: pred.profiles?.full_name || 'Usuário Sem Nome', 
             points: 0 
           };
         }
