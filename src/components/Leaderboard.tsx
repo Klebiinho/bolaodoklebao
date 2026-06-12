@@ -3,6 +3,7 @@
 
 import { Trophy, Medal, ChevronUp, ChevronDown, Minus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 const MOCK_LEADERBOARD = [
   { rank: 1, name: 'Lucas "Golero"', points: 1240, trends: 'up', avatar: '1' },
@@ -65,8 +66,4 @@ export function Leaderboard() {
       </div>
     </div>
   );
-}
-
-function cn(...classes: string[]) {
-  return classes.filter(Boolean).join(' ');
 }

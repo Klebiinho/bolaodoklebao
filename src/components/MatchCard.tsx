@@ -47,6 +47,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
         setStatus('LIVE');
       } else {
         const minsToStart = differenceInMinutes(matchStart, now);
+        // Trava 30 minutos antes do jogo
         if (minsToStart <= 30) {
           setStatus('LOCKED');
         } else {
@@ -71,7 +72,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
     if (status !== 'UPCOMING') {
       toast({
         title: "Acesso negado",
-        description: "O prazo para palpites encerrou.",
+        description: "O prazo para palpites encerrou (30 min antes do jogo).",
         variant: "destructive"
       });
       return;
@@ -122,7 +123,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
               </span>
             )}
             {status === 'FINISHED' && <span className="text-muted-foreground">ENCERRADO</span>}
-            {status === 'LOCKED' && <span className="text-red-400 flex items-center gap-1"><Lock className="w-3 h-3" /> BLOQUEADO</span>}
+            {status === 'LOCKED' && <span className="text-red-400 flex items-center gap-1"><Lock className="w-3 h-3" /> PALPITES ENCERRADOS</span>}
             {status === 'UPCOMING' && <span className="text-accent flex items-center gap-1"><Clock className="w-3 h-3" /> PALPITES ABERTOS</span>}
           </span>
           <span className="text-muted-foreground/60">{displayDate}</span>
@@ -145,7 +146,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           <div className="flex flex-col items-center justify-center gap-4 flex-[1.5]">
             {(status === 'LIVE' || status === 'FINISHED') && (
               <div className="flex flex-col items-center">
-                <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest mb-1">Resultado Real</span>
+                <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest mb-1">Placar Oficial</span>
                 <div className="flex items-center gap-3 bg-secondary/30 px-3 py-1 rounded-full border border-border/30">
                   <span className="text-2xl font-black italic tracking-tighter">{realScoreA || '0'}</span>
                   <span className="text-muted-foreground/30 font-bold text-[10px]">X</span>
@@ -231,7 +232,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           </div>
         )}
 
-        {status === 'FINISHED' && !isSaved && (
+        {(status === 'FINISHED' || status === 'LOCKED') && !isSaved && (
           <div className="w-full py-2.5 bg-secondary/10 rounded-xl flex items-center justify-center border border-dashed border-border/50">
             <span className="text-[10px] font-bold text-muted-foreground uppercase">Nenhum palpite feito</span>
           </div>
