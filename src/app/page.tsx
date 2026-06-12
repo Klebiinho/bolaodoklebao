@@ -3,51 +3,56 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MatchCard } from '@/components/MatchCard';
 import { Leaderboard } from '@/components/Leaderboard';
-import { Trophy, Gamepad2, History, TrendingUp, Bell, Loader2 } from 'lucide-react';
+import { Trophy, Gamepad2, History, TrendingUp, Bell, Loader2, RefreshCcw } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
-import { useEffect, useState } from 'react';
-import { getWorldCupMatches, getTeamDetails } from '@/services/sports-db';
+import { useEffect, useState, useCallback } from 'react';
+import { getWorldCupMatches, getTeamBadge } from '@/services/sports-db';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<string>('');
+
+  const loadData = useCallback(async (isRefresh = false) => {
+    if (!isRefresh) setLoading(true);
+    try {
+      const events = await getWorldCupMatches();
+      
+      const formattedMatches = await Promise.all(events.map(async (event) => {
+        const [badgeA, badgeB] = await Promise.all([
+          getTeamBadge(event.idHomeTeam),
+          getTeamBadge(event.idAwayTeam)
+        ]);
+
+        return {
+          id: event.idEvent,
+          teamA: event.strHomeTeam,
+          teamB: event.strAwayTeam,
+          badgeA,
+          badgeB,
+          displayDate: `${event.dateEvent} - ${event.strTime.substring(0, 5)}`,
+          startTime: event.strTimestamp,
+          realScoreA: event.intHomeScore,
+          realScoreB: event.intAwayScore,
+        };
+      }));
+
+      setMatches(formattedMatches);
+      setLastUpdate(new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error("Erro ao carregar dados da API:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const events = await getWorldCupMatches();
-        
-        const formattedMatches = await Promise.all(events.map(async (event) => {
-          // Busca badges reais para cada time via API
-          const [homeTeam, awayTeam] = await Promise.all([
-            getTeamDetails(event.idHomeTeam),
-            getTeamDetails(event.idAwayTeam)
-          ]);
-
-          return {
-            id: event.idEvent,
-            teamA: event.strHomeTeam,
-            teamB: event.strAwayTeam,
-            badgeA: homeTeam?.strTeamBadge || `https://picsum.photos/seed/${event.idHomeTeam}/200/200`,
-            badgeB: awayTeam?.strTeamBadge || `https://picsum.photos/seed/${event.idAwayTeam}/200/200`,
-            displayDate: `${event.dateEvent} - ${event.strTime.substring(0, 5)}`,
-            startTime: event.strTimestamp || `${event.dateEvent}T${event.strTime}`,
-            realScoreA: event.intHomeScore,
-            realScoreB: event.intAwayScore,
-          };
-        }));
-
-        setMatches(formattedMatches);
-      } catch (error) {
-        console.error("Erro ao carregar dados da API:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadData();
-  }, []);
+    // Atualização automática a cada 2 minutos (respeitando limite de requisições)
+    const interval = setInterval(() => loadData(true), 120000);
+    return () => clearInterval(interval);
+  }, [loadData]);
 
   return (
     <main className="min-h-screen max-w-2xl mx-auto pb-24 md:pb-8">
@@ -60,9 +65,9 @@ export default function Home() {
           <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Copa do Mundo 2026</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex flex-col items-end mr-2">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase leading-none">Saldo</span>
-            <span className="text-sm font-headline font-bold text-accent">1,250 pts</span>
+          <div className="hidden sm:flex flex-col items-end mr-2 text-[10px] text-muted-foreground font-bold uppercase">
+            <span>Última Sincronização</span>
+            <span className="text-primary">{lastUpdate || '--:--'}</span>
           </div>
           <button className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center relative">
             <Bell className="w-5 h-5 text-muted-foreground" />
@@ -75,13 +80,13 @@ export default function Home() {
       <div className="px-6 py-6">
         <Tabs defaultValue="feed" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-secondary/50 h-12 mb-8 rounded-xl p-1">
-            <TabsTrigger value="feed" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all">
+            <TabsTrigger value="feed" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
               <Gamepad2 className="w-4 h-4" /> Jogos
             </TabsTrigger>
-            <TabsTrigger value="rank" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all">
+            <TabsTrigger value="rank" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
               <Trophy className="w-4 h-4" /> Ranking
             </TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all">
+            <TabsTrigger value="history" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
               <History className="w-4 h-4" /> Histórico
             </TabsTrigger>
           </TabsList>
@@ -90,8 +95,16 @@ export default function Home() {
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-headline font-bold text-lg flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
-                Tabela 2026 (Real-time)
+                Partidas em Tempo Real
               </h2>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => loadData(true)} 
+                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary"
+              >
+                <RefreshCcw className="w-3 h-3 mr-2" /> Atualizar
+              </Button>
             </div>
             
             {loading ? (
@@ -107,21 +120,9 @@ export default function Home() {
                   ))
                 ) : (
                   <div className="text-center py-20 bg-secondary/10 rounded-3xl border border-dashed border-border/50">
-                    <p className="text-sm text-muted-foreground font-medium">Os confrontos de 2026 estão sendo definidos.</p>
+                    <p className="text-sm text-muted-foreground font-medium">Nenhuma partida encontrada no momento.</p>
                   </div>
                 )}
-              </div>
-            )}
-
-            {!loading && (
-              <div className="mt-12 p-8 bg-secondary/20 rounded-3xl border-2 border-dashed border-border/50 text-center flex flex-col items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center">
-                  <Gamepad2 className="w-6 h-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-headline font-bold text-sm text-foreground">Sistema Oficial de Palpites</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Placares atualizados conforme a API TheSportsDB.</p>
-                </div>
               </div>
             )}
           </TabsContent>
