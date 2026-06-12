@@ -18,8 +18,8 @@ export default function Home() {
       setLoading(true);
       const events = await getWorldCupMatches();
       
+      // Mapeamento para buscar os escudos reais de cada seleção
       const formattedMatches = await Promise.all(events.map(async (event) => {
-        // Tentamos buscar escudos reais, caso contrário usamos placeholders temáticos
         const homeTeam = await getTeamDetails(event.idHomeTeam);
         const awayTeam = await getTeamDetails(event.idAwayTeam);
 
@@ -89,7 +89,7 @@ export default function Home() {
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <p className="text-sm text-muted-foreground font-medium animate-pulse">Preparando a Copa de 2026...</p>
+                <p className="text-sm text-muted-foreground font-medium animate-pulse">Buscando seleções...</p>
               </div>
             ) : (
               <div className="grid gap-6">
@@ -112,7 +112,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="font-headline font-bold text-sm text-foreground">Prepare sua torcida</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Dados atualizados para o mundial de 2026.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Dados oficiais da Copa do Mundo.</p>
                 </div>
               </div>
             )}

@@ -25,7 +25,7 @@ export interface Team {
   strTeamBadge: string;
 }
 
-// Fallback de jogos para 2026 (EUA, México e Canadá)
+// Fallback de jogos para 2026 (EUA, México e Canadá) com IDs reais para busca de escudos
 const MOCK_2026_MATCHES: SportsEvent[] = [
   {
     idEvent: 'mock1',
