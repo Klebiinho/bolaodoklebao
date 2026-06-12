@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getWorldCupMatches, getTeamBadge } from '@/services/sports-db';
@@ -6,10 +5,6 @@ import { fetchPastResults } from '@/app/actions/sportsApi';
 import { createClient } from '@/utils/supabase/server';
 import { calculatePoints } from '@/lib/scoring';
 
-/**
- * Server Action para buscar e formatar jogos e dados do usuário.
- * Otimizado para reduzir o número de chamadas de API e tratar erros de forma robusta.
- */
 export async function getFormattedMatches() {
   try {
     const supabase = await createClient();
@@ -24,7 +19,6 @@ export async function getFormattedMatches() {
     const events = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
     const pastEvents = pastEventsResult.status === 'fulfilled' ? pastEventsResult.value : [];
     
-    // Buscar palpites do usuário se estiver logado
     let userPredictions: any[] = [];
     if (user) {
       const { data } = await supabase
@@ -34,14 +28,12 @@ export async function getFormattedMatches() {
       userPredictions = data || [];
     }
 
-    // Cache local de badges para evitar requisições duplicadas na mesma execução
     const badgeCache: Record<string, string> = {};
 
     const formattedMatches = await Promise.all(events.map(async (event) => {
       const pastResult = pastEvents.find((p: any) => p.idEvent === event.idEvent);
       const prediction = userPredictions.find(p => p.match_id === event.idEvent);
       
-      // Otimização: busca badges em paralelo e usa cache
       const [badgeA, badgeB] = await Promise.all([
         badgeCache[event.idHomeTeam] || (badgeCache[event.idHomeTeam] = await getTeamBadge(event.idHomeTeam)),
         badgeCache[event.idAwayTeam] || (badgeCache[event.idAwayTeam] = await getTeamBadge(event.idAwayTeam))
@@ -68,30 +60,24 @@ export async function getFormattedMatches() {
     }));
 
     return {
-      matches: JSON.parse(JSON.stringify(formattedMatches)), // Garante serialização total
-      timestamp: new Date().toLocaleTimeString()
+      matches: JSON.parse(JSON.stringify(formattedMatches)),
+      timestamp: new Date().toLocaleTimeString('pt-BR')
     };
   } catch (error) {
     console.error("Erro crítico ao formatar jogos:", error);
     return {
       matches: [],
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: new Date().toLocaleTimeString('pt-BR'),
       error: "Não foi possível carregar os jogos."
     };
   }
 }
 
-/**
- * Server Action para calcular o ranking global.
- */
 export async function getLeaderboardData() {
   try {
     const supabase = await createClient();
-    
-    // 1. Buscar todos os resultados reais
     const pastEvents = await fetchPastResults();
     
-    // 2. Buscar todos os palpites e nomes dos usuários
     const { data: predictions, error } = await supabase
       .from('Predictions')
       .select('*, profiles:user_id(full_name)');
