@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,6 +9,30 @@ import { toast } from '@/hooks/use-toast';
 import { differenceInMinutes, parseISO, isAfter, addHours } from 'date-fns';
 import { calculatePoints } from '@/lib/scoring';
 import { createClient } from '@/utils/supabase/client';
+
+const COUNTRY_TRANSLATIONS: Record<string, string> = {
+  "USA": "EUA",
+  "Mexico": "México",
+  "Brazil": "Brasil",
+  "France": "França",
+  "Germany": "Alemanha",
+  "Argentina": "Argentina",
+  "Spain": "Espanha",
+  "England": "Inglaterra",
+  "Portugal": "Portugal",
+  "Italy": "Itália",
+  "Netherlands": "Holanda",
+  "Belgium": "Bélgica",
+  "Croatia": "Croácia",
+  "Uruguay": "Uruguai",
+  "Colombia": "Colômbia",
+  "Senegal": "Senegal",
+  "Morocco": "Marrocos",
+  "Japan": "Japão",
+  "South Korea": "Coreia do Sul",
+  "Canada": "Canadá",
+  "South Africa": "África do Sul"
+};
 
 interface MatchProps {
   id: string;
@@ -31,6 +54,8 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
   
   const supabase = createClient();
 
+  const getTranslatedName = (name: string) => COUNTRY_TRANSLATIONS[name] || name;
+
   useEffect(() => {
     const updateStatus = () => {
       const now = new Date();
@@ -50,7 +75,6 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
         setStatus('LIVE');
       } else {
         const minsToStart = differenceInMinutes(matchStart, now);
-        // Trava 30 minutos antes do jogo
         if (minsToStart <= 30) {
           setStatus('LOCKED');
         } else {
@@ -64,7 +88,6 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
     return () => clearInterval(interval);
   }, [startTime]);
 
-  // Busca palpite existente ao montar o componente
   useEffect(() => {
     const fetchExistingPrediction = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -144,7 +167,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
       setIsSaved(true);
       toast({
         title: "Palpite Confirmado!",
-        description: `Registrado para ${teamA} x ${teamB}.`,
+        description: `Registrado para ${getTranslatedName(teamA)} x ${getTranslatedName(teamB)}.`,
       });
     } catch (error: any) {
       console.error("Erro ao salvar palpite:", error);
@@ -170,8 +193,8 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
   const isInteractionDisabled = status !== 'UPCOMING' || isSaving;
 
   const getOptimizedBadge = (url: string) => {
-    if (url.includes('thesportsdb.com') && !url.endsWith('/tiny')) {
-      return `${url}/tiny`;
+    if (url.includes('thesportsdb.com') && !url.includes('/preview')) {
+      return `${url}/preview`;
     }
     return url;
   };
@@ -207,11 +230,13 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
             <div className="w-14 h-14 mb-3 flex items-center justify-center">
               <img 
                 src={getOptimizedBadge(badgeA)} 
-                alt={teamA} 
-                className="max-w-full max-h-full object-contain drop-shadow-sm"
+                alt={getTranslatedName(teamA)} 
+                className="max-w-full max-h-full object-contain drop-shadow-md"
               />
             </div>
-            <span className="text-[11px] font-headline font-black text-center uppercase tracking-tighter">{teamA}</span>
+            <span className="text-[11px] font-headline font-black text-center uppercase tracking-tighter line-clamp-1">
+              {getTranslatedName(teamA)}
+            </span>
           </div>
 
           <div className="flex flex-col items-center justify-center gap-4 flex-[1.5]">
@@ -266,11 +291,13 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
             <div className="w-14 h-14 mb-3 flex items-center justify-center">
               <img 
                 src={getOptimizedBadge(badgeB)} 
-                alt={teamB} 
-                className="max-w-full max-h-full object-contain drop-shadow-sm"
+                alt={getTranslatedName(teamB)} 
+                className="max-w-full max-h-full object-contain drop-shadow-md"
               />
             </div>
-            <span className="text-[11px] font-headline font-black text-center uppercase tracking-tighter">{teamB}</span>
+            <span className="text-[11px] font-headline font-black text-center uppercase tracking-tighter line-clamp-1">
+              {getTranslatedName(teamB)}
+            </span>
           </div>
         </div>
 
