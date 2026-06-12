@@ -160,7 +160,7 @@ export default async function LoginPage(props: {
 
         <footer className="text-center">
           <p className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.3em] opacity-50">
-            Firebase Studio • Powered by Genkit
+            FEITO POR KLEBER VENÂNCIO
           </p>
         </footer>
       </div>
