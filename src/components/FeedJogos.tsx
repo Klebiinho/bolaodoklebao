@@ -19,6 +19,12 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
   const [matches, setMatches] = useState<any[]>(initialMatches);
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string>(initialUpdate);
+  const [mounted, setMounted] = useState(false);
+
+  // Garante que operações dependentes de tempo ou IDs dinâmicos rodem apenas no cliente após a hidratação
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const loadData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setLoading(true);
@@ -38,13 +44,27 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
     return () => clearInterval(interval);
   }, [loadData]);
 
+  // Filtros movidos para dentro do useMemo, mas com proteção de 'mounted' para evitar mismatch
   const historyMatches = useMemo(() => {
+    if (!mounted) return [];
     return matches.filter(m => m.realScoreA !== null || isAfter(new Date(), parseISO(m.startTime)));
-  }, [matches]);
+  }, [matches, mounted]);
 
   const activeMatches = useMemo(() => {
+    if (!mounted) return matches; // No servidor, assume que todos são ativos para renderização inicial estável
     return matches.filter(m => m.realScoreA === null && !isAfter(new Date(), parseISO(m.startTime)));
-  }, [matches]);
+  }, [matches, mounted]);
+
+  // Se não estiver montado, renderiza um esqueleto estável ou o estado inicial básico
+  // para evitar que o Radix UI gere IDs diferentes entre servidor e cliente
+  if (!mounted) {
+    return (
+      <div className="px-6 py-6 flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+        <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Carregando Arena...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 py-6">
