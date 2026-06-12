@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Lock, Clock, Circle, Award } from 'lucide-react';
@@ -103,6 +102,14 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
 
   const isInteractionDisabled = status !== 'UPCOMING';
 
+  // Otimização de URL para API TheSportsDB
+  const getOptimizedBadge = (url: string) => {
+    if (url.includes('thesportsdb.com') && !url.endsWith('/tiny')) {
+      return `${url}/tiny`;
+    }
+    return url;
+  };
+
   return (
     <Card className={cn(
       "bg-card border-border/50 p-5 transition-all duration-300 relative overflow-hidden group",
@@ -131,13 +138,11 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
 
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col items-center flex-1">
-            <div className="relative w-14 h-14 mb-3">
-              <Image 
-                src={`${badgeA}/tiny`} 
+            <div className="w-14 h-14 mb-3 flex items-center justify-center">
+              <img 
+                src={getOptimizedBadge(badgeA)} 
                 alt={teamA} 
-                width={56} 
-                height={56}
-                className="object-contain drop-shadow-sm"
+                className="max-w-full max-h-full object-contain drop-shadow-sm"
               />
             </div>
             <span className="text-[11px] font-headline font-black text-center uppercase tracking-tighter">{teamA}</span>
@@ -192,13 +197,11 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           </div>
 
           <div className="flex flex-col items-center flex-1">
-            <div className="relative w-14 h-14 mb-3">
-              <Image 
-                src={`${badgeB}/tiny`} 
+            <div className="w-14 h-14 mb-3 flex items-center justify-center">
+              <img 
+                src={getOptimizedBadge(badgeB)} 
                 alt={teamB} 
-                width={56} 
-                height={56}
-                className="object-contain drop-shadow-sm"
+                className="max-w-full max-h-full object-contain drop-shadow-sm"
               />
             </div>
             <span className="text-[11px] font-headline font-black text-center uppercase tracking-tighter">{teamB}</span>
