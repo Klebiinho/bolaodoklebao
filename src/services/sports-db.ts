@@ -1,5 +1,5 @@
 /**
- * @fileOverview Serviço para interação com a API TheSportsDB focado na Copa 2026.
+ * @fileOverview Serviço para interação com a API TheSportsDB focado na Copa 2026 com tratamento de erros aprimorado.
  */
 
 const BASE_URL = 'https://www.thesportsdb.com/api/v1/json/123';
@@ -35,6 +35,12 @@ export async function getWorldCupMatches(): Promise<SportsEvent[]> {
       console.warn('API TheSportsDB retornou erro, usando mocks.');
       return getMockMatches();
     }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('API TheSportsDB retornou conteúdo inválido, usando mocks.');
+      return getMockMatches();
+    }
     
     const data = await response.json();
     
@@ -59,6 +65,11 @@ export async function getTeamBadge(idTeam: string): Promise<string> {
     });
     
     if (!response.ok) return `https://picsum.photos/seed/${idTeam}/200/200`;
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return `https://picsum.photos/seed/${idTeam}/200/200`;
+    }
     
     const data = await response.json();
     return data.teams?.[0]?.strTeamBadge || `https://picsum.photos/seed/${idTeam}/200/200`;
