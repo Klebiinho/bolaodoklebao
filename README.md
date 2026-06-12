@@ -1,64 +1,26 @@
-# Palpiteiro Pro - Configuração do Supabase
+# Palpiteiro Pro - Arena da Copa 2026
 
-Copie e cole APENAS o código SQL abaixo no seu **SQL Editor** do Supabase:
+Parabéns! O seu banco de dados está configurado e pronto para a ação.
 
-```sql
--- 1. Tabela de Perfis
-create table if not exists public.profiles (
-  id uuid references auth.users on delete cascade not null primary key,
-  full_name text,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+## 🚀 Como tudo funciona agora:
 
--- 2. Tabela de Palpites
-create table if not exists public."Predictions" (
-  id bigint primary key generated always as identity,
-  user_id uuid references auth.users on delete cascade not null,
-  match_id text not null,
-  predicted_home_score integer not null,
-  predicted_away_score integer not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  unique(user_id, match_id)
-);
+1. **Palpites Ativos**: Os jogos futuros aparecem na aba principal. Você pode dar seu palpite até 30 minutos antes do apito inicial.
+2. **Histórico**: Assim que um jogo termina, o placar real é buscado automaticamente da API e seus pontos são calculados.
+3. **Ranking**: O ranking global é recalculado em tempo real comparando todos os palpites dos usuários com os resultados reais das partidas.
 
--- 3. Segurança (RLS)
-alter table public.profiles enable row level security;
-alter table public."Predictions" enable row level security;
+## 🔧 Configurações do Supabase (Ação Necessária)
 
--- 4. Políticas Profiles (Usa blocos anônimos para evitar erro se já existirem)
-do $$ begin
-  create policy "Perfis públicos são visíveis para todos" on public.profiles for select using (true);
-exception when others then null; end $$;
+Para que os usuários consigam entrar no bolão, você deve:
 
-do $$ begin
-  create policy "Usuários podem atualizar o próprio perfil" on public.profiles for update using (auth.uid() = id);
-exception when others then null; end $$;
+1. Acessar o dashboard do Supabase.
+2. Ir em **Authentication** -> **Providers**.
+3. Ativar o provedor **Email**.
+4. Desativar **Confirm Email** (opcional, para testes rápidos) se quiser que os usuários loguem imediatamente após o cadastro.
 
--- 5. Políticas Predictions
-do $$ begin
-  create policy "Palpites são visíveis para todos" on public."Predictions" for select using (true);
-exception when others then null; end $$;
+## 🏆 Sistema de Pontos
+- **3 Pontos**: Acertar o placar exato (ex: apostou 2x1 e foi 2x1).
+- **1 Ponto**: Acertar o vencedor ou empate, mas errar o placar (ex: apostou 1x0 e foi 3x0).
+- **0 Pontos**: Errar completamente o resultado.
 
-do $$ begin
-  create policy "Usuários podem inserir os próprios palpites" on public."Predictions" for insert with check (auth.uid() = user_id);
-exception when others then null; end $$;
-
-do $$ begin
-  create policy "Usuários podem atualizar os próprios palpites" on public."Predictions" for update using (auth.uid() = user_id);
-exception when others then null; end $$;
-
--- 6. Trigger Automação
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, full_name)
-  values (new.id, new.raw_user_meta_data->>'full_name');
-  return new;
-end;
-$$ language plpgsql security definer;
-
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
-```
+---
+Feito por Kleber Venâncio

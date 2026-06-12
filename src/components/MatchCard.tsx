@@ -68,8 +68,7 @@ const COUNTRY_TRANSLATIONS: Record<string, string> = {
   "Senegal": "Senegal",
   "South Africa": "África do Sul",
   "Tunisia": "Tunísia",
-  "Italy": "Itália",
-  "Belgium": "Bélgica"
+  "Italy": "Itália"
 };
 
 interface MatchProps {
@@ -82,11 +81,15 @@ interface MatchProps {
   startTime: string;
   realScoreA: string | null;
   realScoreB: string | null;
+  userPrediction?: { a: number; b: number } | null;
 }
 
-export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, startTime, realScoreA, realScoreB }: MatchProps) {
-  const [prediction, setPrediction] = useState({ a: '', b: '' });
-  const [isSaved, setIsSaved] = useState(false);
+export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, startTime, realScoreA, realScoreB, userPrediction }: MatchProps) {
+  const [prediction, setPrediction] = useState({ 
+    a: userPrediction?.a.toString() || '', 
+    b: userPrediction?.b.toString() || '' 
+  });
+  const [isSaved, setIsSaved] = useState(!!userPrediction);
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState<'UPCOMING' | 'LOCKED' | 'LIVE' | 'FINISHED'>('UPCOMING');
   
@@ -126,29 +129,16 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
     return () => clearInterval(interval);
   }, [startTime]);
 
+  // Sincroniza estado local com props se elas mudarem
   useEffect(() => {
-    const fetchExistingPrediction = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('Predictions')
-        .select('*')
-        .eq('match_id', id)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (data && !error) {
-        setPrediction({
-          a: data.predicted_home_score.toString(),
-          b: data.predicted_away_score.toString()
-        });
-        setIsSaved(true);
-      }
-    };
-
-    fetchExistingPrediction();
-  }, [id, supabase]);
+    if (userPrediction) {
+      setPrediction({
+        a: userPrediction.a.toString(),
+        b: userPrediction.b.toString()
+      });
+      setIsSaved(true);
+    }
+  }, [userPrediction]);
 
   const handleInput = (team: 'a' | 'b', val: string) => {
     if (status !== 'UPCOMING') return;

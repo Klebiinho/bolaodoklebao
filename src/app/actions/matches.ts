@@ -44,6 +44,7 @@ export async function getFormattedMatches() {
         badgeCache[event.idAwayTeam] || (badgeCache[event.idAwayTeam] = await getTeamBadge(event.idAwayTeam))
       ]);
 
+      // Prioriza placar real da API de resultados passados
       const realScoreA = pastResult?.intHomeScore || event.intHomeScore;
       const realScoreB = pastResult?.intAwayScore || event.intAwayScore;
 
@@ -89,7 +90,7 @@ export async function getLeaderboardData() {
       .select('*, profiles:user_id(full_name)');
 
     if (error || !predictions) {
-      console.warn("Nenhuma predição encontrada ou erro no banco:", error);
+      console.warn("Problema ao buscar predições:", error);
       return [];
     }
 
