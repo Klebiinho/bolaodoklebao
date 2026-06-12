@@ -1,65 +1,11 @@
-
-'use client';
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MatchCard } from '@/components/MatchCard';
-import { Leaderboard } from '@/components/Leaderboard';
-import { Trophy, Gamepad2, History, TrendingUp, Bell, Loader2, RefreshCcw } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
-import { useEffect, useState, useCallback } from 'react';
-import { getWorldCupMatches, getTeamBadge } from '@/services/sports-db';
-import { Button } from '@/components/ui/button';
-import { fetchPastResults } from '@/app/actions/sportsApi';
+import { getFormattedMatches } from '@/app/actions/matches';
+import { FeedJogos } from '@/components/FeedJogos';
 
-export default function Home() {
-  const [matches, setMatches] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<string>('');
-
-  const loadData = useCallback(async (isRefresh = false) => {
-    if (!isRefresh) setLoading(true);
-    try {
-      const [events, pastEvents] = await Promise.all([
-        getWorldCupMatches(),
-        fetchPastResults()
-      ]);
-      
-      const allEvents = [...events];
-      // Mesclar resultados reais da API de histórico se disponível
-      const formattedMatches = await Promise.all(allEvents.map(async (event) => {
-        const pastResult = pastEvents.find((p: any) => p.idEvent === event.idEvent);
-        const [badgeA, badgeB] = await Promise.all([
-          getTeamBadge(event.idHomeTeam),
-          getTeamBadge(event.idAwayTeam)
-        ]);
-
-        return {
-          id: event.idEvent,
-          teamA: event.strHomeTeam,
-          teamB: event.strAwayTeam,
-          badgeA,
-          badgeB,
-          displayDate: `${event.dateEvent} - ${event.strTime.substring(0, 5)}`,
-          startTime: event.strTimestamp,
-          realScoreA: pastResult?.intHomeScore || event.intHomeScore,
-          realScoreB: pastResult?.intAwayScore || event.intAwayScore,
-        };
-      }));
-
-      setMatches(formattedMatches);
-      setLastUpdate(new Date().toLocaleTimeString());
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-    const interval = setInterval(() => loadData(true), 120000);
-    return () => clearInterval(interval);
-  }, [loadData]);
+export default async function Home() {
+  // Busca inicial no servidor - Resolve CORS e aplica cache automaticamente
+  const { matches, timestamp } = await getFormattedMatches();
 
   return (
     <main className="min-h-screen max-w-2xl mx-auto pb-24 md:pb-8">
@@ -78,63 +24,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="px-6 py-6">
-        <Tabs defaultValue="feed" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-secondary/50 h-12 mb-8 rounded-xl p-1">
-            <TabsTrigger value="feed" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
-              <Gamepad2 className="w-4 h-4" /> Jogos
-            </TabsTrigger>
-            <TabsTrigger value="rank" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
-              <Trophy className="w-4 h-4" /> Ranking
-            </TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
-              <History className="w-4 h-4" /> Histórico
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="feed" className="space-y-6 focus-visible:outline-none">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-headline font-bold text-lg flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                Partidas
-              </h2>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => loadData(true)} 
-                className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary"
-              >
-                <RefreshCcw className="w-3 h-3 mr-2" /> {lastUpdate || 'Atualizar'}
-              </Button>
-            </div>
-            
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-4">
-                <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest">Sincronizando placares oficiais...</p>
-              </div>
-            ) : (
-              <div className="grid gap-6">
-                {matches.map((match) => (
-                  <MatchCard key={match.id} {...match} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="rank" className="focus-visible:outline-none">
-            <Leaderboard />
-          </TabsContent>
-
-          <TabsContent value="history" className="focus-visible:outline-none">
-             <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
-                <History className="w-12 h-12 text-muted-foreground/30" />
-                <h3 className="font-headline font-bold text-lg">Histórico de Palpites</h3>
-                <p className="text-sm text-muted-foreground max-w-[280px]">Os jogos finalizados e seus pontos aparecerão aqui em breve.</p>
-             </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+      <FeedJogos initialMatches={matches} initialUpdate={timestamp} />
 
       <Toaster />
     </main>
