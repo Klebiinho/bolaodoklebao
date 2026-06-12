@@ -4,11 +4,12 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Lock, Clock, Circle, Award } from 'lucide-react';
+import { Check, Lock, Clock, Circle, Award, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { differenceInMinutes, parseISO, isAfter, addHours } from 'date-fns';
 import { calculatePoints } from '@/lib/scoring';
+import { createClient } from '@/utils/supabase/client';
 
 interface MatchProps {
   id: string;
@@ -25,7 +26,10 @@ interface MatchProps {
 export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, startTime, realScoreA, realScoreB }: MatchProps) {
   const [prediction, setPrediction] = useState({ a: '', b: '' });
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState<'UPCOMING' | 'LOCKED' | 'LIVE' | 'FINISHED'>('UPCOMING');
+  
+  const supabase = createClient();
 
   useEffect(() => {
     const updateStatus = () => {
@@ -60,6 +64,31 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
     return () => clearInterval(interval);
   }, [startTime]);
 
+  // Busca palpite existente ao montar o componente
+  useEffect(() => {
+    const fetchExistingPrediction = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('Predictions')
+        .select('*')
+        .eq('match_id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (data && !error) {
+        setPrediction({
+          a: data.predicted_home_score.toString(),
+          b: data.predicted_away_score.toString()
+        });
+        setIsSaved(true);
+      }
+    };
+
+    fetchExistingPrediction();
+  }, [id, supabase]);
+
   const handleInput = (team: 'a' | 'b', val: string) => {
     if (status !== 'UPCOMING') return;
     if (!/^\d*$/.test(val)) return;
@@ -67,7 +96,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
     setIsSaved(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (status !== 'UPCOMING') {
       toast({
         title: "Acesso negado",
@@ -76,6 +105,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
       });
       return;
     }
+
     if (prediction.a === '' || prediction.b === '') {
       toast({
         title: "Campos vazios",
@@ -84,11 +114,48 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
       });
       return;
     }
-    setIsSaved(true);
-    toast({
-      title: "Palpite Confirmado!",
-      description: `Registrado para ${teamA} x ${teamB}.`,
-    });
+
+    setIsSaving(true);
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        toast({
+          title: "Não autenticado",
+          description: "Você precisa estar logado para salvar palpites.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('Predictions')
+        .upsert({
+          match_id: id,
+          user_id: user.id,
+          predicted_home_score: parseInt(prediction.a),
+          predicted_away_score: parseInt(prediction.b),
+        }, { 
+          onConflict: 'match_id, user_id' 
+        });
+
+      if (error) throw error;
+
+      setIsSaved(true);
+      toast({
+        title: "Palpite Confirmado!",
+        description: `Registrado para ${teamA} x ${teamB}.`,
+      });
+    } catch (error: any) {
+      console.error("Erro ao salvar palpite:", error);
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Ocorreu um erro ao tentar registrar seu palpite.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const points = (status === 'FINISHED' && isSaved && realScoreA !== null && realScoreB !== null) 
@@ -100,9 +167,8 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
       })
     : null;
 
-  const isInteractionDisabled = status !== 'UPCOMING';
+  const isInteractionDisabled = status !== 'UPCOMING' || isSaving;
 
-  // Otimização de URL para API TheSportsDB
   const getOptimizedBadge = (url: string) => {
     if (url.includes('thesportsdb.com') && !url.endsWith('/tiny')) {
       return `${url}/tiny`;
@@ -113,7 +179,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
   return (
     <Card className={cn(
       "bg-card border-border/50 p-5 transition-all duration-300 relative overflow-hidden group",
-      isInteractionDisabled ? "opacity-95" : "card-glow"
+      isInteractionDisabled && status !== 'UPCOMING' ? "opacity-95" : "card-glow"
     )}>
       <div className={cn(
         "absolute top-0 left-0 w-1.5 h-full transition-colors",
@@ -171,8 +237,8 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
                   onChange={(e) => handleInput('a', e.target.value)}
                   className={cn(
                     "w-10 h-12 text-center text-xl font-black bg-secondary/30 rounded-lg border-2 border-transparent outline-none",
-                    !isInteractionDisabled && "focus:border-primary",
-                    isInteractionDisabled && "opacity-60"
+                    status === 'UPCOMING' && !isSaving && "focus:border-primary",
+                    (status !== 'UPCOMING' || isSaving) && "opacity-60"
                   )}
                   placeholder="-"
                 />
@@ -186,8 +252,8 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
                   onChange={(e) => handleInput('b', e.target.value)}
                   className={cn(
                     "w-10 h-12 text-center text-xl font-black bg-secondary/30 rounded-lg border-2 border-transparent outline-none",
-                    !isInteractionDisabled && "focus:border-primary",
-                    isInteractionDisabled && "opacity-60"
+                    status === 'UPCOMING' && !isSaving && "focus:border-primary",
+                    (status !== 'UPCOMING' || isSaving) && "opacity-60"
                   )}
                   placeholder="-"
                 />
@@ -211,13 +277,18 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
         {status === 'UPCOMING' && (
           <Button
             onClick={handleSave}
+            disabled={isSaving}
             className={cn(
               "w-full h-10 font-headline font-bold text-xs uppercase tracking-wider rounded-xl transition-all",
               isSaved ? "bg-green-600 hover:bg-green-700" : "bg-primary"
             )}
           >
-            {isSaved ? <Check className="w-4 h-4 mr-2" /> : null}
-            {isSaved ? "Palpite Registrado" : "Confirmar Palpite"}
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : isSaved ? (
+              <Check className="w-4 h-4 mr-2" />
+            ) : null}
+            {isSaving ? "Salvando..." : isSaved ? "Palpite Registrado" : "Confirmar Palpite"}
           </Button>
         )}
 
