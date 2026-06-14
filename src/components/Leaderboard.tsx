@@ -8,16 +8,17 @@ import { useState, useEffect } from 'react';
 import { getLeaderboardData } from '@/app/actions/matches';
 
 interface LeaderboardProps {
-  initialData?: any[];
+  initialData?: any[] | null;
 }
 
-export function Leaderboard({ initialData = [] }: LeaderboardProps) {
-  const [data, setData] = useState<any[]>(initialData);
+export function Leaderboard({ initialData = null }: LeaderboardProps) {
+  const [data, setData] = useState<any[]>(initialData || []);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Apenas se não vierem dados por prop, fazemos o fetch
-    if (initialData.length === 0) {
+    // Apenas se NÃO vieram dados por prop (initialData === null), fazemos o fetch
+    // Se o initialData vier vazio [], significa que o banco está vazio (estado válido) e não devemos carregar!
+    if (initialData === null) {
       setLoading(true);
       async function fetchRank() {
         const rank = await getLeaderboardData();

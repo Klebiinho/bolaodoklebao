@@ -41,7 +41,7 @@ function getRoundLabel(round: string): string {
   return round;
 }
 
-export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = [] }: FeedJogosProps) {
+export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = null }: FeedJogosProps) {
   const [matches, setMatches] = useState<any[]>(initialMatches);
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string>(initialUpdate);
