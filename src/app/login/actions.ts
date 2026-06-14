@@ -49,7 +49,7 @@ export async function signup(formData: FormData) {
   }
 
   revalidatePath('/', 'layout');
-  redirect('/login?message=Verifique seu e-mail para confirmar o cadastro');
+  redirect('/');
 }
 
 export async function logout() {
