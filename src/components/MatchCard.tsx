@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Lock, Clock, Circle, Award, Loader2 } from 'lucide-react';
+import { Check, Lock, Clock, Circle, Award, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { differenceInMinutes, parseISO, isAfter, addHours } from 'date-fns';
 import { calculatePoints } from '@/lib/scoring';
 import { createClient } from '@/utils/supabase/client';
+import { MatchDetailsView } from './MatchDetailsView';
 
 const COUNTRY_TRANSLATIONS: Record<string, string> = {
   // Américas (CONMEBOL e CONCACAF)
@@ -92,6 +93,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
   const [isSaved, setIsSaved] = useState(!!userPrediction);
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState<'UPCOMING' | 'LOCKED' | 'LIVE' | 'FINISHED'>('UPCOMING');
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const supabase = createClient();
 
@@ -351,9 +353,34 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           </div>
         )}
 
+        {status === 'FINISHED' && points === null && !isSaved && (
           <div className="w-full py-3 bg-secondary/50 rounded-lg flex items-center justify-center border border-border/50">
             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Nenhum palpite feito</span>
           </div>
+        )}
+
+        <Button 
+          variant="ghost" 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full h-8 text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-secondary/50 hover:text-foreground mt-2"
+        >
+          {isExpanded ? (
+            <>Menos sobre esse jogo <ChevronUp className="w-3 h-3 ml-2" /></>
+          ) : (
+            <>Mais sobre esse jogo <ChevronDown className="w-3 h-3 ml-2" /></>
+          )}
+        </Button>
+
+        {isExpanded && (
+          <MatchDetailsView 
+            matchId={id} 
+            teamA={getTranslatedName(teamA)} 
+            teamB={getTranslatedName(teamB)} 
+            badgeA={badgeA} 
+            badgeB={badgeB} 
+            date={startTime}
+          />
+        )}
       </div>
     </Card>
   );
