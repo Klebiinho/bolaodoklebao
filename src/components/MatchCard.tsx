@@ -98,6 +98,8 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
   const getTranslatedName = (name: string) => COUNTRY_TRANSLATIONS[name] || name;
 
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+
     const updateStatus = () => {
       const now = new Date();
       let matchStart: Date;
@@ -112,6 +114,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
       
       if (isAfter(now, matchEnd)) {
         setStatus('FINISHED');
+        if (interval) clearInterval(interval);
       } else if (isAfter(now, matchStart)) {
         setStatus('LIVE');
       } else {
@@ -125,7 +128,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
     };
 
     updateStatus();
-    const interval = setInterval(updateStatus, 30000);
+    interval = setInterval(updateStatus, 30000);
     return () => clearInterval(interval);
   }, [startTime]);
 
@@ -222,14 +225,10 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
 
   return (
     <Card className={cn(
-      "bg-card border-border/50 p-5 transition-all duration-300 relative overflow-hidden group",
-      isInteractionDisabled && status !== 'UPCOMING' ? "opacity-95" : "card-glow"
+      "bg-card border border-border/50 rounded-xl p-5 shadow-sm transition-all duration-300 relative group hover:border-primary/30",
+      isInteractionDisabled && status !== 'UPCOMING' ? "opacity-95" : ""
     )}>
-      <div className={cn(
-        "absolute top-0 left-0 w-1.5 h-full transition-colors",
-        status === 'LIVE' ? "bg-red-500 animate-pulse" : 
-        status === 'FINISHED' ? "bg-primary/40" : "bg-primary/20 group-hover:bg-primary"
-      )} />
+
       
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.2em] font-bold">
@@ -263,11 +262,11 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           <div className="flex flex-col items-center justify-center gap-4 flex-[1.5]">
             {(status === 'LIVE' || status === 'FINISHED') && (
               <div className="flex flex-col items-center">
-                <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest mb-1">Placar Oficial</span>
-                <div className="flex items-center gap-3 bg-secondary/30 px-3 py-1 rounded-full border border-border/30">
-                  <span className="text-2xl font-black italic tracking-tighter">{realScoreA || '0'}</span>
-                  <span className="text-muted-foreground/30 font-bold text-[10px]">X</span>
-                  <span className="text-2xl font-black italic tracking-tighter">{realScoreB || '0'}</span>
+                <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest mb-1 bg-secondary px-2 py-0.5 rounded-sm">Placar Oficial</span>
+                <div className="flex items-center gap-3 bg-transparent px-3 py-1">
+                  <span className="text-2xl font-headline font-semibold tracking-tighter">{realScoreA || '0'}</span>
+                  <span className="text-muted-foreground/40 font-bold text-[10px]">X</span>
+                  <span className="text-2xl font-headline font-semibold tracking-tighter">{realScoreB || '0'}</span>
                 </div>
               </div>
             )}
@@ -282,8 +281,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
                   value={prediction.a}
                   onChange={(e) => handleInput('a', e.target.value)}
                   className={cn(
-                    "w-10 h-12 text-center text-xl font-black bg-secondary/30 rounded-lg border-2 border-transparent outline-none",
-                    status === 'UPCOMING' && !isSaving && "focus:border-primary",
+                    "w-12 h-12 text-center text-xl font-headline font-semibold bg-background rounded-md border border-border shadow-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary",
                     (status !== 'UPCOMING' || isSaving) && "opacity-60"
                   )}
                   placeholder="-"
@@ -297,8 +295,7 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
                   value={prediction.b}
                   onChange={(e) => handleInput('b', e.target.value)}
                   className={cn(
-                    "w-10 h-12 text-center text-xl font-black bg-secondary/30 rounded-lg border-2 border-transparent outline-none",
-                    status === 'UPCOMING' && !isSaving && "focus:border-primary",
+                    "w-12 h-12 text-center text-xl font-headline font-semibold bg-background rounded-md border border-border shadow-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary",
                     (status !== 'UPCOMING' || isSaving) && "opacity-60"
                   )}
                   placeholder="-"
@@ -327,8 +324,8 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
             onClick={handleSave}
             disabled={isSaving}
             className={cn(
-              "w-full h-10 font-headline font-bold text-xs uppercase tracking-wider rounded-xl transition-all",
-              isSaved ? "bg-green-600 hover:bg-green-700" : "bg-primary"
+              "w-full h-11 font-headline font-semibold text-xs uppercase tracking-wider rounded-md border border-transparent shadow-sm hover:-translate-y-0.5 transition-all",
+              isSaved ? "bg-orange-500 hover:bg-orange-600 text-white" : "bg-primary text-primary-foreground hover:bg-primary/90"
             )}
           >
             {isSaving ? (
@@ -342,10 +339,10 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
 
         {status === 'FINISHED' && points !== null && (
           <div className={cn(
-            "w-full py-2.5 rounded-xl flex items-center justify-center gap-2 border animate-in fade-in zoom-in duration-500",
-            points === 3 ? "bg-green-500/10 border-green-500/30 text-green-500" :
-            points === 1 ? "bg-blue-500/10 border-blue-500/30 text-blue-400" :
-            "bg-secondary/20 border-border/50 text-muted-foreground"
+            "w-full py-3 rounded-lg flex items-center justify-center gap-2 border border-border/50 animate-in fade-in zoom-in duration-500 shadow-sm",
+            points === 3 ? "bg-orange-500/10 text-orange-600 border-orange-500/20" :
+            points === 1 ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
+            "bg-secondary text-muted-foreground"
           )}>
             <Award className={cn("w-4 h-4", points > 0 && "animate-bounce")} />
             <span className="text-xs font-black uppercase tracking-widest">
@@ -354,11 +351,9 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
           </div>
         )}
 
-        {(status === 'FINISHED' || status === 'LOCKED') && !isSaved && (
-          <div className="w-full py-2.5 bg-secondary/10 rounded-xl flex items-center justify-center border border-dashed border-border/50">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase">Nenhum palpite feito</span>
+          <div className="w-full py-3 bg-secondary/50 rounded-lg flex items-center justify-center border border-border/50">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Nenhum palpite feito</span>
           </div>
-        )}
       </div>
     </Card>
   );

@@ -4,7 +4,7 @@
  * @fileOverview Server Action para buscar resultados reais da API TheSportsDB com tratamento robusto de erros.
  */
 
-const BASE_URL = 'https://www.thesportsdb.com/api/v1/json/123';
+const BASE_URL = 'https://www.thesportsdb.com/api/v1/json/3';
 const WORLD_CUP_ID = '4429';
 
 export async function fetchPastResults() {

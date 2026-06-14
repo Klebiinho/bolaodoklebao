@@ -1,8 +1,7 @@
 
 'use server';
 
-import { getWorldCupMatches, getTeamBadge } from '@/services/sports-db';
-import { fetchPastResults } from '@/app/actions/sportsApi';
+import { getWorldCupMatches, getLocalBadge } from '@/services/sports-db';
 import { createClient } from '@/utils/supabase/server';
 import { calculatePoints } from '@/lib/scoring';
 
@@ -12,13 +11,11 @@ export async function getFormattedMatches() {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
 
-    const [eventsResult, pastEventsResult] = await Promise.allSettled([
-      getWorldCupMatches(),
-      fetchPastResults()
+    const eventsResult = await Promise.allSettled([
+      getWorldCupMatches()
     ]);
     
-    const events = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
-    const pastEvents = pastEventsResult.status === 'fulfilled' ? pastEventsResult.value : [];
+    const events = eventsResult[0].status === 'fulfilled' ? eventsResult[0].value : [];
     
     let userPredictions: any[] = [];
     if (user) {
@@ -32,19 +29,29 @@ export async function getFormattedMatches() {
       }
     }
 
-    const badgeCache: Record<string, string> = {};
 
     const formattedMatches = await Promise.all(events.map(async (event) => {
-      const pastResult = pastEvents.find((p: any) => p.idEvent === event.idEvent);
       const prediction = userPredictions.find(p => p.match_id === event.idEvent);
       
-      const [badgeA, badgeB] = await Promise.all([
-        badgeCache[event.idHomeTeam] || (badgeCache[event.idHomeTeam] = await getTeamBadge(event.idHomeTeam)),
-        badgeCache[event.idAwayTeam] || (badgeCache[event.idAwayTeam] = await getTeamBadge(event.idAwayTeam))
-      ]);
+      const badgeA = getLocalBadge(event.strHomeTeam);
+      const badgeB = getLocalBadge(event.strAwayTeam);
 
-      const realScoreA = pastResult?.intHomeScore || event.intHomeScore;
-      const realScoreB = pastResult?.intAwayScore || event.intAwayScore;
+      const realScoreA = event.intHomeScore;
+      const realScoreB = event.intAwayScore;
+
+      let brtDateStr = `${event.dateEvent} - ${event.strTime?.substring(0, 5) || ''}`;
+      if (event.dateEvent && event.strTime) {
+        const d = new Date(`${event.dateEvent}T${event.strTime}Z`);
+        if (!isNaN(d.getTime())) {
+          brtDateStr = d.toLocaleDateString('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          }).replace(', ', ' - ');
+        }
+      }
 
       return {
         id: event.idEvent,
@@ -52,10 +59,13 @@ export async function getFormattedMatches() {
         teamB: event.strAwayTeam,
         badgeA,
         badgeB,
-        displayDate: `${event.dateEvent} - ${event.strTime?.substring(0, 5) || ''}`,
+        displayDate: brtDateStr,
         startTime: event.strTimestamp,
         realScoreA: realScoreA !== null ? realScoreA.toString() : null,
         realScoreB: realScoreB !== null ? realScoreB.toString() : null,
+        status: event.strStatus,
+        round: event.intRound || null,
+        group: event.strGroup || null,
         userPrediction: prediction ? {
           a: prediction.predicted_home_score,
           b: prediction.predicted_away_score
@@ -80,23 +90,21 @@ export async function getFormattedMatches() {
 export async function getLeaderboardData() {
   try {
     const supabase = await createClient();
-    const pastEvents = await fetchPastResults();
     
-    // Busca predições. Fazemos a busca de perfis separadamente para garantir compatibilidade
-    // caso o relacionamento de chave estrangeira não seja detectado automaticamente.
-    const { data: predictions, error: predError } = await supabase
-      .from('Predictions')
-      .select('*');
+    // Dispara todas as consultas ao banco SIMULTANEAMENTE para não bloquear o carregamento
+    const [pastEvents, predictionsResult, profilesResult] = await Promise.all([
+      getWorldCupMatches(),
+      supabase.from('Predictions').select('*'),
+      supabase.from('profiles').select('id, full_name')
+    ]);
+
+    const { data: predictions, error: predError } = predictionsResult;
+    const { data: profiles, error: profError } = profilesResult;
 
     if (predError || !predictions) {
       console.warn("Problema ao buscar predições:", predError);
       return [];
     }
-
-    // Busca todos os perfis para fazer o merge em memória (mais resiliente)
-    const { data: profiles, error: profError } = await supabase
-      .from('profiles')
-      .select('id, full_name');
 
     const profileMap: Record<string, string> = {};
     if (profiles) {

@@ -4,24 +4,49 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MatchCard } from '@/components/MatchCard';
 import { Leaderboard } from '@/components/Leaderboard';
-import { Trophy, Gamepad2, History, TrendingUp, Loader2, RefreshCcw, Award } from 'lucide-react';
+import { Trophy, Gamepad2, History, TrendingUp, Loader2, Award } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { getFormattedMatches } from '@/app/actions/matches';
-import { isAfter, parseISO } from 'date-fns';
 
 interface FeedJogosProps {
   initialMatches: any[];
   initialUpdate: string;
+  initialLeaderboard?: any[];
 }
 
-export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
+/** Agrupa partidas por rodada e retorna um array ordenado de [rodada, partidas[]] */
+function groupByRound(matches: any[]): [string, any[]][] {
+  const groups: Record<string, any[]> = {};
+  for (const m of matches) {
+    const round = m.round || 'Sem rodada';
+    if (!groups[round]) groups[round] = [];
+    groups[round].push(m);
+  }
+  // Ordena rodadas numericamente (1, 2, 3...)
+  return Object.entries(groups).sort(([a], [b]) => {
+    const na = parseInt(a);
+    const nb = parseInt(b);
+    if (isNaN(na) && isNaN(nb)) return 0;
+    if (isNaN(na)) return 1;
+    if (isNaN(nb)) return -1;
+    return na - nb;
+  });
+}
+
+/** Retorna label bonito para a rodada */
+function getRoundLabel(round: string): string {
+  const num = parseInt(round);
+  if (!isNaN(num)) return `${num}ª Rodada`;
+  return round;
+}
+
+export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = [] }: FeedJogosProps) {
   const [matches, setMatches] = useState<any[]>(initialMatches);
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string>(initialUpdate);
   const [mounted, setMounted] = useState(false);
 
-  // Garante que operações dependentes de tempo ou IDs dinâmicos rodem apenas no cliente após a hidratação
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -29,6 +54,7 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
   const loadData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setLoading(true);
     try {
+      await fetch('/api/sync?mode=live').catch(() => {});
       const data = await getFormattedMatches();
       setMatches(data.matches);
       setLastUpdate(data.timestamp);
@@ -44,19 +70,19 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  // Filtros movidos para dentro do useMemo, mas com proteção de 'mounted' para evitar mismatch
   const historyMatches = useMemo(() => {
     if (!mounted) return [];
-    return matches.filter(m => m.realScoreA !== null || isAfter(new Date(), parseISO(m.startTime)));
+    return matches.filter(m => m.status === 'FT' || m.status === 'Match Finished');
   }, [matches, mounted]);
 
   const activeMatches = useMemo(() => {
-    if (!mounted) return matches; // No servidor, assume que todos são ativos para renderização inicial estável
-    return matches.filter(m => m.realScoreA === null && !isAfter(new Date(), parseISO(m.startTime)));
+    if (!mounted) return matches;
+    return matches.filter(m => m.status !== 'FT' && m.status !== 'Match Finished');
   }, [matches, mounted]);
 
-  // Se não estiver montado, renderiza um esqueleto estável ou o estado inicial básico
-  // para evitar que o Radix UI gere IDs diferentes entre servidor e cliente
+  const activeByRound = useMemo(() => groupByRound(activeMatches), [activeMatches]);
+  const historyByRound = useMemo(() => groupByRound(historyMatches), [historyMatches]);
+
   if (!mounted) {
     return (
       <div className="px-6 py-6 flex flex-col items-center justify-center min-h-[400px]">
@@ -69,14 +95,14 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
   return (
     <div className="px-6 py-6">
       <Tabs defaultValue="feed" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-secondary/50 h-12 mb-8 rounded-xl p-1">
-          <TabsTrigger value="feed" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-border h-12 mb-8 p-0">
+          <TabsTrigger value="feed" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-headline font-semibold text-xs uppercase tracking-wider flex items-center gap-2 rounded-none h-full">
             <Gamepad2 className="w-4 h-4" /> Jogos
           </TabsTrigger>
-          <TabsTrigger value="rank" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+          <TabsTrigger value="rank" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-headline font-semibold text-xs uppercase tracking-wider flex items-center gap-2 rounded-none h-full">
             <Trophy className="w-4 h-4" /> Ranking
           </TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-background data-[state=active]:text-primary font-headline font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+          <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-headline font-semibold text-xs uppercase tracking-wider flex items-center gap-2 rounded-none h-full">
             <History className="w-4 h-4" /> Histórico
           </TabsTrigger>
         </TabsList>
@@ -87,37 +113,35 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
               <TrendingUp className="w-5 h-5 text-primary" />
               Partidas Abertas
             </h2>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => loadData(true)} 
-              disabled={loading}
-              className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary"
-            >
-              {loading ? (
-                <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-              ) : (
-                <RefreshCcw className="w-3 h-3 mr-2" />
-              )}
-              {lastUpdate || 'Atualizar'}
-            </Button>
+
           </div>
           
-          <div className="grid gap-6">
-            {activeMatches.length > 0 ? (
-              activeMatches.map((match) => (
-                <MatchCard key={match.id} {...match} />
-              ))
-            ) : (
-              <div className="text-center py-12 border border-dashed border-border rounded-2xl">
-                <p className="text-sm text-muted-foreground">Nenhuma partida aberta no momento.</p>
+          {activeByRound.length > 0 ? (
+            activeByRound.map(([round, roundMatches]) => (
+              <div key={`active-${round}`} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground bg-background px-3">
+                    {getRoundLabel(round)}
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <div className="grid gap-4">
+                  {roundMatches.map((match: any) => (
+                    <MatchCard key={match.id} {...match} />
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
+            ))
+          ) : (
+            <div className="text-center py-12 border border-border/50 rounded-xl bg-card shadow-sm">
+              <p className="text-sm text-muted-foreground font-semibold uppercase tracking-widest">Nenhuma partida aberta no momento.</p>
+            </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="rank" className="focus-visible:outline-none">
-          <Leaderboard />
+        <TabsContent value="rank" className="mt-6 animate-in fade-in-50 focus-visible:outline-none">
+          <Leaderboard initialData={initialLeaderboard} />
         </TabsContent>
 
         <TabsContent value="history" className="focus-visible:outline-none">
@@ -126,19 +150,30 @@ export function FeedJogos({ initialMatches, initialUpdate }: FeedJogosProps) {
                 <Award className="w-5 h-5 text-primary" />
                 Meus Resultados
               </h2>
-              <div className="grid gap-6">
-                {historyMatches.length > 0 ? (
-                  historyMatches.map((match) => (
-                    <MatchCard key={match.id} {...match} />
-                  ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
-                    <History className="w-12 h-12 text-muted-foreground/30" />
-                    <h3 className="font-headline font-bold text-lg">Sem Histórico</h3>
-                    <p className="text-sm text-muted-foreground max-w-[280px]">Os jogos finalizados e seus pontos aparecerão aqui assim que as partidas terminarem.</p>
+              {historyByRound.length > 0 ? (
+                historyByRound.map(([round, roundMatches]) => (
+                  <div key={`history-${round}`} className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground bg-background px-3">
+                        {getRoundLabel(round)}
+                      </span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+                    <div className="grid gap-4">
+                      {roundMatches.map((match: any) => (
+                        <MatchCard key={match.id} {...match} />
+                      ))}
+                    </div>
                   </div>
-                )}
-              </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
+                  <History className="w-12 h-12 text-muted-foreground/30" />
+                  <h3 className="font-headline font-bold text-lg">Sem Histórico</h3>
+                  <p className="text-sm text-muted-foreground max-w-[280px]">Os jogos finalizados e seus pontos aparecerão aqui assim que as partidas terminarem.</p>
+                </div>
+              )}
            </div>
         </TabsContent>
       </Tabs>

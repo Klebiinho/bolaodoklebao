@@ -17,52 +17,53 @@ export default function LoginPage(props: {
   const loginError = resolvedParams.error;
   const loginMessage = resolvedParams.message;
   const [mounted, setMounted] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Evita Hydration Mismatch renderizando um estado estável até que o cliente esteja montado
   if (!mounted) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
+      <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-background">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Aguardando arena...</p>
+          <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">Aguardando arena...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mb-4 border border-primary/20 shadow-2xl shadow-primary/10 rotate-3 hover:rotate-0 transition-transform duration-500">
-            <Trophy className="w-10 h-10 text-primary" />
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 transition-all duration-300">
+            <Trophy className="w-8 h-8 text-primary" />
           </div>
           <h1 className="font-headline font-black text-4xl tracking-tighter text-primary italic uppercase leading-none">
-            Palpiteiro<span className="text-foreground">Pro</span>
+            Bolão do <span className="text-foreground">Klebão</span>
           </h1>
-          <p className="text-muted-foreground text-sm font-medium tracking-wide">COPA DO MUNDO 2026 • O BOLÃO OFICIAL</p>
+          <p className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase mt-2">COPA DO MUNDO 2026 • O BOLÃO OFICIAL</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-secondary/50 p-1 rounded-xl mb-6">
-            <TabsTrigger value="login" className="rounded-lg font-bold uppercase text-[10px] tracking-widest">Entrar</TabsTrigger>
-            <TabsTrigger value="signup" className="rounded-lg font-bold uppercase text-[10px] tracking-widest">Cadastrar</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 bg-transparent border-b border-border p-0 mb-6 h-12">
+            <TabsTrigger value="login" className="rounded-none font-semibold uppercase text-[10px] tracking-widest data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-b-primary h-full">Entrar</TabsTrigger>
+            <TabsTrigger value="signup" className="rounded-none font-semibold uppercase text-[10px] tracking-widest data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-b-primary h-full">Cadastrar</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="login">
-            <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-2xl">
+          <TabsContent value="login" className="focus-visible:outline-none">
+            <Card className="border border-border/50 bg-card rounded-xl shadow-sm">
               <form action={login}>
                 <CardHeader>
-                  <CardTitle className="font-headline font-bold text-xl">Bem-vindo de volta!</CardTitle>
-                  <CardDescription>Acesse sua conta para continuar seus palpites.</CardDescription>
+                  <CardTitle className="font-headline font-bold text-xl uppercase tracking-tight">Bem-vindo de volta!</CardTitle>
+                  <CardDescription className="text-xs">Acesse sua conta para continuar seus palpites.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email-login">E-mail</Label>
+                    <Label htmlFor="email-login" className="text-xs font-bold uppercase tracking-wider">E-mail</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -71,13 +72,15 @@ export default function LoginPage(props: {
                         type="email"
                         placeholder="seu@email.com"
                         required
-                        className="bg-secondary/30 pl-10 h-11 border-border/50 focus:border-primary/50 transition-colors"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="bg-background pl-10 h-12 border border-border rounded-md focus-visible:border-primary focus:border-primary transition-all focus:ring-0 focus-visible:ring-0 shadow-sm"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password-login">Senha</Label>
+                      <Label htmlFor="password-login" className="text-xs font-bold uppercase tracking-wider">Senha</Label>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -87,13 +90,15 @@ export default function LoginPage(props: {
                         type="password"
                         placeholder="••••••••"
                         required
-                        className="bg-secondary/30 pl-10 h-11 border-border/50 focus:border-primary/50 transition-colors"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="bg-background pl-10 h-12 border border-border rounded-md focus-visible:border-primary focus:border-primary transition-all focus:ring-0 focus-visible:ring-0 shadow-sm"
                       />
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-4">
-                  <Button type="submit" className="w-full font-bold uppercase tracking-widest h-12 text-xs group">
+                  <Button type="submit" className="w-full font-semibold uppercase tracking-widest h-12 text-xs group rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm">
                     Entrar na Arena
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
@@ -102,16 +107,16 @@ export default function LoginPage(props: {
             </Card>
           </TabsContent>
 
-          <TabsContent value="signup">
-            <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-2xl">
+          <TabsContent value="signup" className="focus-visible:outline-none">
+            <Card className="border border-border/50 bg-card rounded-xl shadow-sm">
               <form action={signup}>
                 <CardHeader>
-                  <CardTitle className="font-headline font-bold text-xl">Crie sua conta</CardTitle>
-                  <CardDescription>Entre na disputa pelo título de maior palpiteiro.</CardDescription>
+                  <CardTitle className="font-headline font-bold text-xl uppercase tracking-tight">Crie sua conta</CardTitle>
+                  <CardDescription className="text-xs">Entre na disputa pelo título de campeão do bolão.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name-signup">Nome Completo</Label>
+                    <Label htmlFor="name-signup" className="text-xs font-bold uppercase tracking-wider">Nome Completo</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -120,12 +125,12 @@ export default function LoginPage(props: {
                         type="text"
                         placeholder="Como quer ser chamado?"
                         required
-                        className="bg-secondary/30 pl-10 h-11 border-border/50 focus:border-primary/50 transition-colors"
+                        className="bg-background pl-10 h-12 border border-border rounded-md focus-visible:border-primary focus:border-primary transition-all focus:ring-0 focus-visible:ring-0 shadow-sm"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email-signup">E-mail</Label>
+                    <Label htmlFor="email-signup" className="text-xs font-bold uppercase tracking-wider">E-mail</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -134,12 +139,14 @@ export default function LoginPage(props: {
                         type="email"
                         placeholder="seu@email.com"
                         required
-                        className="bg-secondary/30 pl-10 h-11 border-border/50 focus:border-primary/50 transition-colors"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="bg-background pl-10 h-12 border border-border rounded-md focus-visible:border-primary focus:border-primary transition-all focus:ring-0 focus-visible:ring-0 shadow-sm"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password-signup">Senha</Label>
+                    <Label htmlFor="password-signup" className="text-xs font-bold uppercase tracking-wider">Senha</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -148,13 +155,15 @@ export default function LoginPage(props: {
                         type="password"
                         placeholder="Mínimo 6 caracteres"
                         required
-                        className="bg-secondary/30 pl-10 h-11 border-border/50 focus:border-primary/50 transition-colors"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="bg-background pl-10 h-12 border border-border rounded-md focus-visible:border-primary focus:border-primary transition-all focus:ring-0 focus-visible:ring-0 shadow-sm"
                       />
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" variant="secondary" className="w-full font-bold uppercase tracking-widest h-12 text-xs border border-primary/20 hover:bg-primary/10 hover:text-primary transition-all">
+                  <Button type="submit" className="w-full font-semibold uppercase tracking-widest h-12 text-xs rounded-md border border-border/50 bg-background text-foreground hover:bg-secondary transition-all shadow-sm">
                     Começar a Palpitar
                   </Button>
                 </CardFooter>
@@ -164,14 +173,14 @@ export default function LoginPage(props: {
         </Tabs>
 
         {loginError && (
-          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl animate-in shake duration-500">
+          <div className="p-4 bg-destructive/10 border-2 border-destructive rounded-none animate-in shake duration-500">
             <p className="text-xs text-destructive font-bold text-center uppercase tracking-wider leading-relaxed">
               {loginError}
             </p>
           </div>
         )}
         {loginMessage && (
-          <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl animate-in zoom-in duration-500">
+          <div className="p-4 bg-primary/10 border-2 border-primary rounded-none animate-in zoom-in duration-500">
             <p className="text-xs text-primary font-bold text-center uppercase tracking-wider leading-relaxed">
               {loginMessage}
             </p>
