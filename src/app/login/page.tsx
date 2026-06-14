@@ -1,6 +1,8 @@
 
 'use client';
 
+import Image from 'next/image';
+
 import { use, useState, useEffect } from 'react';
 import { login, signup } from './actions';
 import { Button } from '@/components/ui/button';
@@ -39,8 +41,8 @@ export default function LoginPage(props: {
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 transition-all duration-300">
-            <Trophy className="w-8 h-8 text-primary" />
+          <div className="w-20 h-20 bg-background rounded-full flex items-center justify-center mb-4 transition-all duration-300 shadow-sm overflow-hidden border border-border/50">
+            <Image src="/logo.jpg" alt="Bolão do Klebão Logo" width={80} height={80} className="object-cover" />
           </div>
           <h1 className="font-headline font-black text-4xl tracking-tighter text-primary italic uppercase leading-none">
             Bolão do <span className="text-foreground">Klebão</span>

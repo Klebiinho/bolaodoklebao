@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { logout } from './login/actions';
 import Link from 'next/link';
 import { UserMenu } from '@/components/UserMenu';
+import Image from 'next/image';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -24,11 +25,16 @@ export default async function Home() {
   return (
     <main className="min-h-screen max-w-2xl mx-auto pb-24 md:pb-8">
       <header className="sticky top-0 z-50 bg-background border-b border-border px-6 py-5 flex items-center justify-between">
-        <div className="flex flex-col">
-          <h1 className="font-headline font-black text-3xl tracking-tighter text-primary uppercase leading-none">
-            Bolão do <span className="text-foreground font-light">Klebão</span>
-          </h1>
-          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest mt-1">Copa do Mundo 2026</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full overflow-hidden border border-border/50 shadow-sm shrink-0 bg-white">
+            <Image src="/logo.jpg" alt="Bolão do Klebão Logo" width={40} height={40} className="object-cover" />
+          </div>
+          <div className="flex flex-col">
+            <h1 className="font-headline font-black text-3xl tracking-tighter text-primary uppercase leading-none">
+              Bolão do <span className="text-foreground font-light">Klebão</span>
+            </h1>
+            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest mt-1">Copa do Mundo 2026</p>
+          </div>
         </div>
         
         <div className="flex items-center gap-3">
