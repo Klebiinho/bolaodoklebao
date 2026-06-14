@@ -1,10 +1,24 @@
 
-import type {Metadata} from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
+
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: 'Bolão do Klebão',
-  description: 'Predict sports matches and win points!',
+  description: 'Faça seus palpites e ganhe pontos!',
+  icons: {
+    icon: '/logo.jpg',
+    shortcut: '/logo.jpg',
+    apple: '/logo.jpg',
+  },
+  manifest: '/manifest.json'
 };
 
 export default function RootLayout({
