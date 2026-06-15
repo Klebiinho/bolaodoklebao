@@ -11,7 +11,7 @@ import { calculatePoints } from '@/lib/scoring';
 import { createClient } from '@/utils/supabase/client';
 import { MatchDetailsView } from './MatchDetailsView';
 
-const COUNTRY_TRANSLATIONS: Record<string, string> = {
+export const COUNTRY_TRANSLATIONS: Record<string, string> = {
   // Américas (CONMEBOL e CONCACAF)
   "Argentina": "Argentina",
   "Brazil": "Brasil",

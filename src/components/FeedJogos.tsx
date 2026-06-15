@@ -2,7 +2,7 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MatchCard } from '@/components/MatchCard';
+import { MatchCard, COUNTRY_TRANSLATIONS } from '@/components/MatchCard';
 import { Leaderboard } from '@/components/Leaderboard';
 import { Trophy, Gamepad2, History, TrendingUp, Loader2, Award, Compass, Search } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -77,10 +77,13 @@ export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = 
     let filtered = matches.filter(m => m.status === 'FT' || m.status === 'Match Finished');
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(m => 
-        (m.teamA && m.teamA.toLowerCase().includes(q)) || 
-        (m.teamB && m.teamB.toLowerCase().includes(q))
-      );
+      filtered = filtered.filter(m => {
+        const teamA_trans = (COUNTRY_TRANSLATIONS[m.teamA] || m.teamA || '').toLowerCase();
+        const teamB_trans = (COUNTRY_TRANSLATIONS[m.teamB] || m.teamB || '').toLowerCase();
+        const teamA_orig = (m.teamA || '').toLowerCase();
+        const teamB_orig = (m.teamB || '').toLowerCase();
+        return teamA_trans.includes(q) || teamB_trans.includes(q) || teamA_orig.includes(q) || teamB_orig.includes(q);
+      });
     }
     return filtered;
   }, [matches, mounted, searchQuery]);
@@ -90,10 +93,13 @@ export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = 
     let filtered = matches.filter(m => m.status !== 'FT' && m.status !== 'Match Finished');
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(m => 
-        (m.teamA && m.teamA.toLowerCase().includes(q)) || 
-        (m.teamB && m.teamB.toLowerCase().includes(q))
-      );
+      filtered = filtered.filter(m => {
+        const teamA_trans = (COUNTRY_TRANSLATIONS[m.teamA] || m.teamA || '').toLowerCase();
+        const teamB_trans = (COUNTRY_TRANSLATIONS[m.teamB] || m.teamB || '').toLowerCase();
+        const teamA_orig = (m.teamA || '').toLowerCase();
+        const teamB_orig = (m.teamB || '').toLowerCase();
+        return teamA_trans.includes(q) || teamB_trans.includes(q) || teamA_orig.includes(q) || teamB_orig.includes(q);
+      });
     }
     return filtered;
   }, [matches, mounted, searchQuery]);
@@ -113,15 +119,15 @@ export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = 
   return (
     <div className="px-6 py-6">
       <Tabs defaultValue="feed" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-transparent border-b border-border h-12 mb-8 p-0">
-          <TabsTrigger value="feed" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-headline font-semibold text-xs uppercase tracking-wider flex items-center gap-2 rounded-none h-full">
-            <Gamepad2 className="w-4 h-4" /> Jogos
+        <TabsList className="grid w-full grid-cols-3 p-0 fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border h-16 mb-0 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] md:relative md:bg-transparent md:border-t-0 md:border-b md:h-12 md:mb-8 md:backdrop-blur-none md:shadow-none">
+          <TabsTrigger value="feed" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-t-2 md:data-[state=active]:border-t-0 md:data-[state=active]:border-b-2 data-[state=active]:border-primary font-headline font-semibold text-[10px] md:text-xs uppercase tracking-wider flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 rounded-none h-full">
+            <Gamepad2 className="w-5 h-5 md:w-4 md:h-4" /> Jogos
           </TabsTrigger>
-          <TabsTrigger value="rank" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-headline font-semibold text-xs uppercase tracking-wider flex items-center gap-2 rounded-none h-full">
-            <Trophy className="w-4 h-4" /> Ranking
+          <TabsTrigger value="rank" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-t-2 md:data-[state=active]:border-t-0 md:data-[state=active]:border-b-2 data-[state=active]:border-primary font-headline font-semibold text-[10px] md:text-xs uppercase tracking-wider flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 rounded-none h-full">
+            <Trophy className="w-5 h-5 md:w-4 md:h-4" /> Ranking
           </TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-headline font-semibold text-xs uppercase tracking-wider flex items-center gap-2 rounded-none h-full">
-            <History className="w-4 h-4" /> Histórico
+          <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-t-2 md:data-[state=active]:border-t-0 md:data-[state=active]:border-b-2 data-[state=active]:border-primary font-headline font-semibold text-[10px] md:text-xs uppercase tracking-wider flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 rounded-none h-full">
+            <History className="w-5 h-5 md:w-4 md:h-4" /> Histórico
           </TabsTrigger>
         </TabsList>
 
