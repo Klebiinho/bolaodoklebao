@@ -276,6 +276,8 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
             <div className="flex flex-col items-center w-full">
               <div className="flex items-center gap-3">
                 <input
+                  id={`home-score-${id}`}
+                  name={`home-score-${id}`}
                   type="text"
                   inputMode="numeric"
                   maxLength={2}
@@ -290,6 +292,8 @@ export function MatchCard({ id, teamA, teamB, badgeA, badgeB, displayDate, start
                 />
                 <span className="text-muted-foreground/20 font-headline font-bold text-xs">VS</span>
                 <input
+                  id={`away-score-${id}`}
+                  name={`away-score-${id}`}
                   type="text"
                   inputMode="numeric"
                   maxLength={2}

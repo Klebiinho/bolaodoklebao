@@ -4,15 +4,16 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MatchCard } from '@/components/MatchCard';
 import { Leaderboard } from '@/components/Leaderboard';
-import { Trophy, Gamepad2, History, TrendingUp, Loader2, Award } from 'lucide-react';
+import { Trophy, Gamepad2, History, TrendingUp, Loader2, Award, Compass, Search } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { getFormattedMatches } from '@/app/actions/matches';
 
 interface FeedJogosProps {
   initialMatches: any[];
   initialUpdate: string;
-  initialLeaderboard?: any[];
+  initialLeaderboard?: any[] | null;
 }
 
 /** Agrupa partidas por rodada e retorna um array ordenado de [rodada, partidas[]] */
@@ -46,6 +47,7 @@ export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = 
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string>(initialUpdate);
   const [mounted, setMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -72,13 +74,29 @@ export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = 
 
   const historyMatches = useMemo(() => {
     if (!mounted) return [];
-    return matches.filter(m => m.status === 'FT' || m.status === 'Match Finished');
-  }, [matches, mounted]);
+    let filtered = matches.filter(m => m.status === 'FT' || m.status === 'Match Finished');
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(m => 
+        (m.teamA && m.teamA.toLowerCase().includes(q)) || 
+        (m.teamB && m.teamB.toLowerCase().includes(q))
+      );
+    }
+    return filtered;
+  }, [matches, mounted, searchQuery]);
 
   const activeMatches = useMemo(() => {
     if (!mounted) return matches;
-    return matches.filter(m => m.status !== 'FT' && m.status !== 'Match Finished');
-  }, [matches, mounted]);
+    let filtered = matches.filter(m => m.status !== 'FT' && m.status !== 'Match Finished');
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(m => 
+        (m.teamA && m.teamA.toLowerCase().includes(q)) || 
+        (m.teamB && m.teamB.toLowerCase().includes(q))
+      );
+    }
+    return filtered;
+  }, [matches, mounted, searchQuery]);
 
   const activeByRound = useMemo(() => groupByRound(activeMatches), [activeMatches]);
   const historyByRound = useMemo(() => groupByRound(historyMatches), [historyMatches]);
@@ -108,12 +126,23 @@ export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = 
         </TabsList>
 
         <TabsContent value="feed" className="space-y-6 focus-visible:outline-none">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-headline font-bold text-lg flex items-center gap-2">
+          <div className="flex items-center justify-between mb-4 gap-4">
+            <h2 className="font-headline font-bold text-lg flex items-center gap-2 whitespace-nowrap">
               <TrendingUp className="w-5 h-5 text-primary" />
               Partidas Abertas
             </h2>
-
+            <div className="flex items-center gap-2 flex-1 justify-end">
+              <Compass className="w-5 h-5 text-muted-foreground hidden sm:block" />
+              <div className="relative w-full max-w-[200px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input 
+                  placeholder="Buscar time..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9 text-xs rounded-full bg-secondary/50 border-border/50 focus-visible:ring-1 focus-visible:ring-primary"
+                />
+              </div>
+            </div>
           </div>
           
           {activeByRound.length > 0 ? (
@@ -146,10 +175,24 @@ export function FeedJogos({ initialMatches, initialUpdate, initialLeaderboard = 
 
         <TabsContent value="history" className="focus-visible:outline-none">
            <div className="space-y-6">
-              <h2 className="font-headline font-bold text-lg flex items-center gap-2">
-                <Award className="w-5 h-5 text-primary" />
-                Meus Resultados
-              </h2>
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="font-headline font-bold text-lg flex items-center gap-2 whitespace-nowrap">
+                  <Award className="w-5 h-5 text-primary" />
+                  Meus Resultados
+                </h2>
+                <div className="flex items-center gap-2 flex-1 justify-end">
+                  <Compass className="w-5 h-5 text-muted-foreground hidden sm:block" />
+                  <div className="relative w-full max-w-[200px]">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input 
+                      placeholder="Buscar time..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 h-9 text-xs rounded-full bg-secondary/50 border-border/50 focus-visible:ring-1 focus-visible:ring-primary"
+                    />
+                  </div>
+                </div>
+              </div>
               {historyByRound.length > 0 ? (
                 historyByRound.map(([round, roundMatches]) => (
                   <div key={`history-${round}`} className="space-y-4">

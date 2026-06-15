@@ -258,6 +258,8 @@ export function UserProfileModal({ isOpen, onClose, user }: UserProfileModalProp
             
             <div className="flex gap-2">
               <input 
+                id="avatar-upload"
+                name="avatar-upload"
                 type="file" 
                 accept="image/*" 
                 className="hidden" 
