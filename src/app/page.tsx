@@ -31,7 +31,7 @@ export default async function Home() {
           </div>
           <div className="flex flex-col">
             <h1 className="font-headline font-black text-3xl tracking-tighter text-primary uppercase leading-none">
-              Bolão do <span className="text-foreground font-bold">Klebão</span>
+              Bolão do <span className="text-foreground font-black">Klebão</span>
             </h1>
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest mt-1">Copa do Mundo 2026</p>
           </div>
